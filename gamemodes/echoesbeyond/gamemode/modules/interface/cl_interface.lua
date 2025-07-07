@@ -6,13 +6,11 @@ hook.Add("HUDShouldDraw", "interface_HUDShouldDraw", function(name)
 end)
 ]]
 
--- Block chat binds
---[[
+-- Block chat binds --NOT
 local binds = {
-	["messagemode"] = true,
-	["messagemode2"] = true
+	["messagemode"] = false,
+	["messagemode2"] = false
 }
-]]
 
 hook.Add("PlayerBindPress", "interface_PlayerBindPress", function(client, bind, pressed)
 	if (!binds[bind]) then return end

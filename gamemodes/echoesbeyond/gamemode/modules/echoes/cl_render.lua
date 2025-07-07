@@ -193,7 +193,7 @@ local function UpdateEchoInteractions(inEchoes, curTimeSpeed, dt)
 					if (gabenMode) then
 						EchoSound(table.Random(gabenIntroSounds), nil, 0.75)
 					else
-						EchoSound("echo_activate", echo.special and math.random(115, 125) or echo.explicit and math.random(65, 75) or math.random(95, 105))
+						EchoSound("echo_activate", echo.special and math.random(115, 125) or echo.explicit and math.random(65, 75) or math.random(95, 105), echo.read and 0.4 or 1)
 					end
 				end
 
