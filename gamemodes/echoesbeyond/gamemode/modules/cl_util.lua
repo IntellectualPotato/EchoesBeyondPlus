@@ -58,3 +58,40 @@ function RemoveSigning(text)
 
     return text
 end
+
+function ReadEchoes()
+	if not file.Exists("echoesbeyond/readechoes.txt", "DATA") then return {} end
+	local raw = file.Read("echoesbeyond/readechoes.txt", "DATA") or ""
+	
+	-- Convert JSON to newline format if it is json --------------------------
+	if string.Trim(raw):sub(1,1) == "[" then
+		local ok, data = pcall(util.JSONToTable, raw)
+		if ok and istable(data) then
+			local out = {}
+			for _, v in ipairs(data) do
+				local id = tonumber(v)
+				if id then out[#out+1] = id end
+			end
+			file.Write("echoesbeyond/readechoes.txt", table.concat(out, "\n"))
+			raw = table.concat(out, "\n")
+		end
+	end
+	--------------------------------------------------------------------------
+
+	local t, seen = {}, {}
+	for id in string.gmatch(raw, "[^\r\n]+") do
+		id = tonumber(id)
+		if id and not seen[id] then t[#t + 1] = id; seen[id] = true end
+	end
+	return t
+end
+
+function WriteEchoes(t)
+	local seen, out = {}, {}
+	for i = 1, #t do
+		local id = tonumber(t[i])
+		if id and not seen[id] then out[#out + 1] = id; seen[id] = true end
+	end
+	file.CreateDir("echoesbeyond")
+	file.Write("echoesbeyond/readechoes.txt", table.concat(out, "\n"))
+end

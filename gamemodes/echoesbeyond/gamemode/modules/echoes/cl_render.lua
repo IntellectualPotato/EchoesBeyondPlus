@@ -195,15 +195,13 @@ local function UpdateEchoInteractions(inEchoes, curTimeSpeed, dt)
 				end
 
 				if (active == 1 and !bOwner and !echo.read and !echo.special) then
-					local savedData = file.ReadOrCreate("echoesbeyond/readechoes.txt")
+					local savedData = ReadEchoes()
 					savedData[#savedData + 1] = echo.id
 
 					echo.read = true
 
 					readEchoCount = readEchoCount + 1
-
-					file.CreateDir("echoesbeyond")
-					file.Write("echoesbeyond/readechoes.txt", util.TableToJSON(savedData))
+					WriteEchoes(savedData)
 				end
 			else
 				echo.active = math.max(echo.active - dt * 0.5, 0)

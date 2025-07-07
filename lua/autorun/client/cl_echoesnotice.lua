@@ -13,7 +13,7 @@ hook.Add("InitPostEntity", "echoes_gamemodenotice", function()
 		end,
 		function()
 			file.CreateDir("echoesbeyond")
-			file.Write("echoesbeyond/readechoes.txt", "[]") -- Make sure the notice doesn't show up again
+			file.Write("echoesbeyond/readechoes.txt", "") -- Make sure the notice doesn't show up again
 		end
 	)
 end)

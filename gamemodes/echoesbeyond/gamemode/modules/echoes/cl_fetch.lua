@@ -29,7 +29,7 @@ function FetchEchoes()
 		local echoData = data.notes
 		if (!echoData) then return end
 
-		local readEchoes = file.ReadOrCreate("echoesbeyond/readechoes.txt")
+		local readEchoes = ReadEchoes()
 		local echoCount = #echoData
 
 		if (echoCount > #echoes) then
