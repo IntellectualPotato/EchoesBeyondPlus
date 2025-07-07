@@ -14,10 +14,11 @@ if (SERVER) then
 		client:GodEnable()
 		client:AllowFlashlight(true)
 	end)
-
+--[[
 	hook.Add("CanPlayerSuicide", "player_CanPlayerSuicide", function(client)
 		return false
 	end)
+	]]
 
 	-- Disable player collisions
 	hook.Add("ShouldCollide", "player_ShouldCollide", function(entity1, entity2)
@@ -42,9 +43,10 @@ else
 	end, "echoes_speed")
 
 	-- Don't render other players
+	--[[
 	hook.Add("PrePlayerDraw", "player_PrePlayerDraw", function(client)
 		return true
-	end)
+	end)]]
 
 	-- Set the speed on load
 	hook.Add("InitPostEntity", "player_InitPostEntity", function()
@@ -55,9 +57,10 @@ else
 end
 
 -- Disable footstep sounds
+--[[
 hook.Add("PlayerFootstep", "player_PlayerFootstep", function(client, position, foot, sound, volume, filter)
 	return true
-end)
+end)]]
 
 -- Disable damage sounds
 hook.Add("EntityEmitSound", "player_EntityEmitSound", function(soundData)
