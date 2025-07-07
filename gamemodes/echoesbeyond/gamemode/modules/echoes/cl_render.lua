@@ -1,4 +1,3 @@
-
 local __vtab = FindMetaTable("Vector")
 local __vunpack = __vtab.Unpack
 local __vset = __vtab.Set
@@ -181,8 +180,12 @@ local function UpdateEchoInteractions(inEchoes, curTimeSpeed, dt)
 			if (echo.distSqr < activationDist) then
 				local active = math.min(echo.active + dt * 3, 1)
 
+				local cameraZ = cameraData.cz
+				local _, _, echoZ = echo.pos:Unpack()
+				local heightDiff = cameraZ - echoZ -32
+
 				echo.active = active
-				echo.z_offset = Lerp(dt * 3, echo.z_offset, activeZOffset)
+				echo.z_offset = Lerp(dt * 3, echo.z_offset, activeZOffset  + heightDiff)
 
 				if (!echo.soundActive) then
 					echo.soundActive = true
