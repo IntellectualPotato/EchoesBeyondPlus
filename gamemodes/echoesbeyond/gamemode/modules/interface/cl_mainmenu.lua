@@ -7,6 +7,14 @@ local reportMat = Material("echoesbeyond/report.png", "smooth")
 local vignette = Material("echoesbeyond/vignette.png", "smooth")
 local creditsMat = Material("echoesbeyond/credits.png", "smooth")
 local changelogMat = Material("echoesbeyond/changelog.png", "smooth")
+local plusMat = Material("echoesbeyond/echo_plus.png", "smooth")
+
+surface.CreateFont( "Echoes_statsfont", {
+	font = "Roboto",
+	size = 18,
+	scanlines = 0,
+	antialias = true,
+} )
 
 local PANEL = {}
 
@@ -219,11 +227,39 @@ function PANEL:Paint(width, height)
 	surface.SetMaterial(vignette)
 	surface.DrawTexturedRect(0, 0, width, height)
 
-	local breatheLayer = math.sin(CurTime() * 1.5)
+	local breatheLayer = math.cos(CurTime() * 1.5)
+	surface.SetDrawColor(255,255,255,50)
+	surface.SetMaterial(plusMat)
 
-	surface.SetDrawColor(255, 255, 255, 5)
-	surface.SetMaterial(echoMat)
-	surface.DrawTexturedRectRotated(width / 2, height / 2 + 5 * breatheLayer, height / 1.5, height / 1.5, 0)
+	surface.DrawTexturedRectRotated(
+	    width / 2,           -- x-position adjusted by spacing
+	    height / 4 + 5 * breatheLayer, -- y-position with a slight vertical breathing effect
+	    height / 1.5,                 -- width of the object
+	    height / 1.5,                 -- height of the object
+	    0                             -- rotation
+	)
+
+	local spacing = width * 0.33
+	for num = 1, 3 do
+	     local breatheLayer = math.sin(CurTime() + (num * 2) * 1.5)
+	     surface.SetDrawColor(num == 2 and 0 or 255, num == 1 and 0 or 255, num == 3 and 0 or 255, 5)
+	     surface.SetMaterial(echoMat)
+
+	     local offset = 0
+	    if num == 1 then
+	         offset = -spacing  -- left side
+	     elseif num == 3 then
+	         offset = spacing   -- right side
+	    end
+
+	     surface.DrawTexturedRectRotated(
+	        width / 2 + offset,           -- x-position adjusted by spacing
+	        height / 2 + 5 * breatheLayer, -- y-position with a slight vertical breathing effect
+	        height / 1.5,                 -- width of the object
+	        height / 1.5,                 -- height of the object
+	            0                             -- rotation
+	    )
+	end
 
 	if (endPartyEnabled) then
 		surface.SetDrawColor(0, 0, 0, 200)
