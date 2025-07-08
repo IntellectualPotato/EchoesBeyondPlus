@@ -1,4 +1,3 @@
-
 local vignette = Material("echoesbeyond/vignette.png", "smooth")
 
 -- The map menu
@@ -122,8 +121,8 @@ function PANEL:ListMaps(filter)
 		entry:DockMargin(0, 0, 0, 5)
 		entry.Paint = function(this, width, height)
 			local amount = mapList[name] or amount
-			draw.SimpleText(amount .. " Echoes", "DermaDefault", width - 10, height / 2, this.textColor, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
-
+			local echoDisplay = (EchoesOnMaps and (EchoesOnMaps[name] ~= nil and EchoesOnMaps[name] or "NONE") or "NONE")
+			draw.SimpleText("(" .. echoDisplay .. ") " .. amount .. " Echoes", "DermaDefault", width - 10, height / 2, this.textColor, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
 			local installed = self.installedMaps[name]
 			this.textColor = LerpColor(FrameTime() * (installed and 3 or 1), this.textColor, installed and Color(100, 200, 100) or Color(200, 200, 200))
 		end

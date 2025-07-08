@@ -106,3 +106,15 @@ function IDsort()
 		idToSequential[entry.id] = i
 	end
 end
+
+EchoesOnMaps = {}
+function UpdateEchoesOnMaps()
+	EchoesOnMaps[game.GetMap()] = 0
+	for _, v in pairs(writtenEchoes) do
+	    EchoesOnMaps[v.map] = 0
+	end
+	for _, v in pairs(writtenEchoes) do
+		EchoesOnMaps[v.map] = EchoesOnMaps[v.map] + 1
+	end
+end
+UpdateEchoesOnMaps()

@@ -17,17 +17,6 @@ surface.CreateFont( "Echoes_statsfont", {
 } )
 
 local PANEL = {}
-local EchoesOnMaps = {}
-local function UpdateEchoesOnMaps()
-			EchoesOnMaps[game.GetMap()] = 0
-	    	for _, v in pairs(writtenEchoes) do
-		        EchoesOnMaps[v.map] = 0
-		    end
-		    for _, v in pairs(writtenEchoes) do
-		        EchoesOnMaps[v.map] = EchoesOnMaps[v.map] + 1
-		    end
-		end
-		UpdateEchoesOnMaps()
 
 function PANEL:Init()
 	if (IsValid(mainMenu)) then
