@@ -17,6 +17,7 @@ CreateClientConVar("echoes_renderdist", "25000000")
 CreateClientConVar("echoes_disablereadsys", "0")
 CreateClientConVar("echoes_disablesigning", "0")
 CreateClientConVar("echoes_gabenmode", "0")
+CreateClientConVar("echoes_bypasschecks", "0")
 
 cvars.AddChangeCallback("echoes_disablesigning", function(name, old, new)
 	for i = 1, #echoes do

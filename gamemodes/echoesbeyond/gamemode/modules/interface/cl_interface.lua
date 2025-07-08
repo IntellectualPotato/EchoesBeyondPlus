@@ -8,8 +8,8 @@ end)
 
 -- Block chat binds --NOT
 local binds = {
-	["messagemode"] = false,
-	["messagemode2"] = false
+	--["messagemode"] = false,
+	--["messagemode2"] = false
 }
 
 hook.Add("PlayerBindPress", "interface_PlayerBindPress", function(client, bind, pressed)

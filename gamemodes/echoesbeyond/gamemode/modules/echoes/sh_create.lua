@@ -5,33 +5,36 @@ if (SERVER) then
 
 	hook.Add("KeyPress", "echoes_create_KeyPress", function(client, key)
 		if (key != IN_RELOAD) then return end
+		local bypass = GetConVar("echoes_bypasschecks"):GetBool()
 
-		-- Prevent creating echoes too close to any spawn points
-		for _, spawn in ipairs(ents.FindByClass("info_player_start")) do
-			if (client:GetShootPos():DistToSqr(spawn:GetPos()) >= 10000) then continue end
+-- Prevent creating echoes too close to any spawn points
+			for _, spawn in ipairs(ents.FindByClass("info_player_start")) do
+				if (client:GetShootPos():DistToSqr(spawn:GetPos()) >= 10000) then continue end
 
-			EchoNotify(client, "A good message gives breathing room to those beyond. You are too close to a spawn point.")
+				if bypass then EchoNotify(client, "Bypassed spawnPoint check.") continue end
 
-			return
-		end
+				EchoNotify(client, "A good message gives breathing room to those beyond. You are too close to a spawn point.")
 
-		-- Prevent creating echoes outside the world
-		if (!util.IsInWorld(client:GetPos())) then
-			EchoNotify(client, "A good message is grounded in reality. You are outside the world.")
+				return
+			end
 
-			return
-		end
+			-- Prevent creating echoes outside the world
+			if (!util.IsInWorld(client:GetPos())) then
 
-		-- Prevent creating echoes in the air
-		if (!client:IsOnGround()) then
-			EchoNotify(client, "A good message is built on solid ground. You are in the air.")
+				if bypass then EchoNotify(client, "Bypassed void check.") else EchoNotify(client, "A good message is grounded in reality. You are outside the world.") return end
 
-			return
-		end
+			end
 
-		net.Start("echoCreateEcho")
-		net.Send(client)
-	end)
+			-- Prevent creating echoes in the air
+			if (!client:IsOnGround()) and not (!util.IsInWorld(client:GetPos())) then
+
+				if bypass then EchoNotify(client, "Bypassed ground check.") else EchoNotify(client, "A good message is built on solid ground. You are in the air.") return end
+
+			end
+
+			net.Start("echoCreateEcho")
+			net.Send(client)
+		end)
 else
 	createPos = vector_origin
 

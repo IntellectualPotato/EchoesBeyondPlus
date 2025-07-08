@@ -80,6 +80,16 @@ function PANEL:Init()
 	CreateSlider("Movement Speed", GetConVar("echoes_speed"), 1, 1000, 0)
 	CreateSlider("Render Distance", GetConVar("echoes_renderdist"), 10000, 100000000, 0)
 
+	local titleExtra = vgui.Create("DLabel", settingsMenu)
+	titleExtra:SetText("Settings (Extra)")
+	titleExtra:SetFont("DermaLarge")
+	titleExtra:SizeToContents()
+	titleExtra:CenterHorizontal()
+	titleExtra:SetY(450)
+	y = y + 70
+
+	CreateCheckbox("Bypass placement checks (void, ground, etc)", GetConVar("echoes_bypasschecks"))
+
 	local deleteAll = vgui.Create("DButton", self)
 	deleteAll:SetSize(self:GetWide() * 0.5, 30)
 	deleteAll:SetText("Delete all data")
