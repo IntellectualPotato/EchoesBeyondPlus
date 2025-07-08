@@ -89,6 +89,7 @@ function PANEL:Init()
 	y = y + 70
 
 	CreateCheckbox("Bypass placement checks (void, ground, etc)", GetConVar("echoes_bypasschecks"))
+	CreateCheckbox("Debug info", GetConVar("echoes_debuginfo"))
 
 	local deleteAll = vgui.Create("DButton", self)
 	deleteAll:SetSize(self:GetWide() * 0.5, 30)
