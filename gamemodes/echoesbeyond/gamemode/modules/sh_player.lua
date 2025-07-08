@@ -13,6 +13,7 @@ if (SERVER) then
 		client:SetFriction(0.5)
 		client:GodEnable()
 		client:AllowFlashlight(true)
+		client:SetModel("models/player/group01/male_07.mdl") --Default playermodel
 	end)
 --[[
 	hook.Add("CanPlayerSuicide", "player_CanPlayerSuicide", function(client)

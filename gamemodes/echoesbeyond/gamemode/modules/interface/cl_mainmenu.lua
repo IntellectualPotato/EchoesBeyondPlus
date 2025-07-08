@@ -37,6 +37,7 @@ function PANEL:Init()
 	mainMenu = self
 
 	FetchStats()
+	UpdateEchoesOnMaps()
 	timer.Create("echoesFetchStats", 1, 0, FetchStats)
 
 	self.colorStats1, self.colorStats3 = Color(200, 200, 200), Color(200, 200, 200)

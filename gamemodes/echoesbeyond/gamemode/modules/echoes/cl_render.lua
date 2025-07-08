@@ -386,31 +386,46 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 			surface.DrawTexturedRectRotated(0, 0, 192, 192, curTime * -350)
 		end
 
-		if (alpha != 0 and active != 0) then
+		if (alpha ~= 0 and active ~= 0) then
 			cam.IgnoreZ(true)
 
 			for j = 1, #echo.cachedText do
 				draw.SimpleText(echo.cachedText[j], "TargetID", 1, -(150 + j * 15), Color(0, 0, 0, math.min(active * 255, alpha)), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 				draw.SimpleText(echo.cachedText[j], "TargetID", 0, -(151 + j * 15), Color(255, 255, 255, math.min(active * 255, alpha)), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 			end
+
 			if GetConVar("echoes_debuginfo"):GetBool() then
 				IDsort()
-			    local seq = idToSequential[echo.id] or -1
-                --print(seq)
-                local txt = "ID: " .. (echo.id == 1 and "➀" or echo.id) ..
-                            (echo.id % 1000 == 0 or echo.id % 100 == 0 and "☆" and "★" or "") ..
-                            "|" ..
-                            (seq == 1 and "➀" or seq .. (seq % 1000 == 0 and "★" or seq % 100 == 0 and "☆" or ""))
-                draw.SimpleText(txt, "TargetID", 1, 100, Color(0, 0, 0, math.min(active * 255, alpha)), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-                draw.SimpleText(txt, "TargetID", 0, 101, Color(233, 233, 0, math.min(active * 255, alpha)), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-                if echo.inVoid then
-                	draw.SimpleText("VOID", "TargetID", 0, 80, Color(255, 100, 100, math.min(echo.active * 255, alpha)), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-                end
-				print(echo.skin)
+				local seq = idToSequential[echo.id] or -1
 
-				cam.IgnoreZ(false)
+				local idStr = (echo.id == 1 and "➀" or tostring(echo.id))
+				if echo.id % 1000 == 0 then
+					idStr = idStr .. "★"
+				elseif echo.id % 100 == 0 then
+					idStr = idStr .. "☆"
+				end
+
+				local seqStr = (seq == 1 and "➀" or tostring(seq))
+				if seq % 1000 == 0 then
+					seqStr = seqStr .. "★"
+				elseif seq % 100 == 0 then
+					seqStr = seqStr .. "☆"
+				end
+
+				local txt = "ID: " .. idStr .. " | " .. seqStr
+
+				draw.SimpleText(txt, "TargetID", 1, 100, Color(0, 0, 0, math.min(active * 255, alpha)), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+				draw.SimpleText(txt, "TargetID", 0, 101, Color(233, 233, 0, math.min(active * 255, alpha)), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+
+				if echo.inVoid then
+					draw.SimpleText("VOID", "TargetID", 0, 80, Color(255, 100, 100, math.min(echo.active * 255, alpha)), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+				end
+
 			end
+
+			cam.IgnoreZ(false)
 		end
+
 
 		cam.PopModelMatrix()
 
