@@ -17,6 +17,17 @@ surface.CreateFont( "Echoes_statsfont", {
 } )
 
 local PANEL = {}
+local EchoesOnMaps = {}
+local function UpdateEchoesOnMaps()
+			EchoesOnMaps[game.GetMap()] = 0
+	    	for _, v in pairs(writtenEchoes) do
+		        EchoesOnMaps[v.map] = 0
+		    end
+		    for _, v in pairs(writtenEchoes) do
+		        EchoesOnMaps[v.map] = EchoesOnMaps[v.map] + 1
+		    end
+		end
+		UpdateEchoesOnMaps()
 
 function PANEL:Init()
 	if (IsValid(mainMenu)) then
@@ -266,14 +277,20 @@ function PANEL:Paint(width, height)
 		surface.DrawRect(0, 0, width, height)
 	end
 
-	local echoCount = #echoes
-	local frameTime = FrameTime()
+	 local echoCount = #echoes
+        local frameTime = FrameTime()
+        local percentage = 0
+        if globalEchoCount > 0 then
+            percentage = math.Round((#writtenEchoes / globalEchoCount) * 100, 2)
+        end
+        if not EchoesOnMaps[game.GetMap()] then draw.SimpleText("LOADING", "DermaLarge", width / 2, height - 120, Color(180, 180, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER) return end
+        draw.SimpleText("You represent " .. percentage .. "% of the total echoes.", "DermaDefault", width / 2, height - 120, Color(180, 180, 180), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+        draw.SimpleText("There " .. (echoCount == 1 and "is" or "are") .. " currently " .. echoCount .. " echo" .. (echoCount == 1 and "" or "es") .. " on this map. You have read " .. readEchoCount .. " of them. (" .. readEchoCount .. "/" .. echoCount .. ")", "Echoes_statsfont", width / 2, height - 90, self.colorStats1, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+        draw.SimpleText("You have written " .. #writtenEchoes .. " echo" .. (#writtenEchoes == 1 and "" or "es") .. " across " .. self.ownMapCount .. (self.ownMapCount == 1 and " map." or " different maps. and " .. EchoesOnMaps[game.GetMap()] .. " on this map."), "Echoes_statsfont", width / 2, height - 60, Color(200, 200, 200), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+        draw.SimpleText("There are currently " .. globalEchoCount .. " total echoes across " .. mapCount .. " different maps from " .. userCount .. " different users.", "Echoes_statsfont", width / 2, height - 30, self.colorStats3, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 
-	draw.SimpleText("There " .. (echoCount == 1 and "is" or "are") .. " currently " .. echoCount .. " echo" .. (echoCount == 1 and "" or "es") .. " on this map. You have read " .. readEchoCount .. " of them.", "DermaDefault", width / 2, height - 70, self.colorStats1, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-	draw.SimpleText("You have written " .. #writtenEchoes .. " echo" .. (#writtenEchoes == 1 and "" or "es") .. " across " .. self.ownMapCount .. (self.ownMapCount == 1 and " map." or " different maps."), "DermaDefault", width / 2, height - 50, Color(200, 200, 200), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-	draw.SimpleText("There are currently " .. globalEchoCount .. " total echoes across " .. mapCount .. " different maps from " .. userCount .. " different users.", "DermaDefault", width / 2, height - 30, self.colorStats3, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-
-	self.colorStats1, self.colorStats3 = LerpColor(frameTime, self.colorStats1, Color(200, 200, 200)), LerpColor(frameTime, self.colorStats3, Color(200, 200, 200))
+        self.colorStats1 = LerpColor(frameTime, self.colorStats1, Color(200, 200, 200))
+        self.colorStats3 = LerpColor(frameTime, self.colorStats3, Color(200, 200, 200))
 end
 
 function PANEL:OnKeyCodePressed(key)
