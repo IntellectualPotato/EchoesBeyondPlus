@@ -107,7 +107,8 @@ function FetchEchoes()
 				read = read,
 				text = text,
 				active = 0,
-				init = 0
+				init = 0,
+				skin = "default"
 			}
 		end
 
@@ -125,6 +126,7 @@ function FetchEchoes()
 				break
 			end
 		end
+		IDsort()
 	end, function(error)
 		EchoNotify(error)
 	end)

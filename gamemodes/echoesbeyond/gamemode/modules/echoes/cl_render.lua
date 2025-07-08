@@ -19,6 +19,7 @@ CreateClientConVar("echoes_disablesigning", "0")
 CreateClientConVar("echoes_gabenmode", "0")
 CreateClientConVar("echoes_bypasschecks", "0")
 CreateClientConVar("echoes_debuginfo", "0")
+IDsort()
 
 cvars.AddChangeCallback("echoes_disablesigning", function(name, old, new)
 	for i = 1, #echoes do
@@ -63,15 +64,16 @@ local activationDist = 6500 -- How close the player should be to activate the ec
 local echoFadeDist = 2500 -- How far the echo should start fading
 local echoToGroundFrac = 0
 
-local idToSequential = {}
-local function IDsort()
-	table.sort(echoes, function(a, b)
-		return a.id < b.id
-	end)
+local skins = {
+    ["default"] = {echoMat, echoBlankMat},
+    ["star"] = {
+        Material("echoesbeyond/Skins/starecho.png", "mips"),
+        Material("echoesbeyond/Skins/starecho_blank.png", "mips")
+    }
+}
 
-	for i, entry in ipairs(echoes) do
-		idToSequential[entry.id] = i
-	end
+local function getSkin(echo)
+	return skins[echo.skin]
 end
 
 local function GetEchoPosition(echo)
@@ -206,7 +208,7 @@ local function UpdateEchoInteractions(inEchoes, curTimeSpeed, dt)
 					if (gabenMode) then
 						EchoSound(table.Random(gabenIntroSounds), nil, 0.75)
 					else
-						EchoSound("echo_activate", echo.special and math.random(115, 125) or echo.explicit and math.random(65, 75) or math.random(95, 105), echo.read and 0.4 or 1)
+						EchoSound(echo.skin  == "star" and "echo_activate_star" or "echo_activate", echo.special and math.random(115, 125) or echo.explicit and math.random(65, 75) or math.random(95, 105), echo.read and 0.4 or 1)
 					end
 				end
 
@@ -316,6 +318,8 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 				echo.init = math.min(echo.init + frameTime, 1)
 			end
 		end
+		local seq = idToSequential[echo.id] or -1
+		echo.skin = seq == 1 and "star" or "default"
 
 		if (echo.init == 0) then continue end -- Skip rendering if echo is not initialized
 
@@ -373,7 +377,7 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 		cam.PushModelMatrix(echo_mtx, true)
 
 		surface.SetDrawColor(partyMode and echo.partyColor or drawColor)
-		surface.SetMaterial((loading or active > 0) and echoBlankMat or echoMat)
+		surface.SetMaterial((loading or active > 0) and getSkin(echo)[2] or getSkin(echo)[1])
 		surface.DrawTexturedRect(-96, -96, 192, 192)
 
 		if (loading) then
@@ -400,8 +404,9 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
                 draw.SimpleText(txt, "TargetID", 1, 100, Color(0, 0, 0, math.min(active * 255, alpha)), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
                 draw.SimpleText(txt, "TargetID", 0, 101, Color(233, 233, 0, math.min(active * 255, alpha)), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
                 if echo.inVoid then
-                	draw.SimpleText("VOID", "TargetID", 0, 20, Color(255, 100, 100, math.min(echo.active * 255, alpha)), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+                	draw.SimpleText("VOID", "TargetID", 0, 80, Color(255, 100, 100, math.min(echo.active * 255, alpha)), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
                 end
+				print(echo.skin)
 
 				cam.IgnoreZ(false)
 			end

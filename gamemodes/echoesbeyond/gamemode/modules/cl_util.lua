@@ -95,3 +95,14 @@ function WriteEchoes(t)
 	file.CreateDir("echoesbeyond")
 	file.Write("echoesbeyond/readechoes.txt", table.concat(out, "\n"))
 end
+
+idToSequential = {}
+function IDsort()
+	table.sort(echoes, function(a, b)
+		return a.id < b.id
+	end)
+
+	for i, entry in ipairs(echoes) do
+		idToSequential[entry.id] = i
+	end
+end
