@@ -2,6 +2,7 @@
 -- Create echoes
 if (SERVER) then
 	util.AddNetworkString("echoCreateEcho")
+	util.AddNetworkString("EchoGiveInfo")
 
 	hook.Add("KeyPress", "echoes_create_KeyPress", function(client, key)
 		if (key != IN_RELOAD) then return end

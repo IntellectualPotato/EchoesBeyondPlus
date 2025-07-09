@@ -34,6 +34,13 @@ if (SERVER) then
 		client:SetWalkSpeed(speed)
 		client:SetRunSpeed(speed * 2)
 	end)
+
+	net.Receive("EchoGiveInfo", function(len, ply)
+        local allWritten = net.ReadUInt(20)
+        local ThisMap = net.ReadUInt(20)
+        ply:SetNWInt("TotalEchoes", allWritten)
+        ply:SetNWInt("MapEchoes", ThisMap)
+    end)
 else
 	CreateClientConVar("echoes_speed", "100")
 

@@ -1,6 +1,3 @@
-include("modules/interface/cl_echomenu.lua")
-
--- The main menu
 local echoMat = Material("echoesbeyond/echo_simple.png", "smooth")
 local mapMat = Material("echoesbeyond/map.png", "smooth")
 local settingsMat = Material("echoesbeyond/settings.png", "smooth")
@@ -16,6 +13,23 @@ surface.CreateFont( "Echoes_statsfont", {
 	scanlines = 0,
 	antialias = true,
 } )
+
+local function UpdatePlyStats()
+	UpdateEchoesOnMaps()
+	net.Start("EchoGiveInfo")
+		net.WriteUInt(#writtenEchoes or 0, 20)
+		net.WriteUInt(EchoesOnMaps[game.GetMap()] or 0, 20)
+	net.SendToServer()
+end
+
+timer.Simple(5, function()
+	UpdatePlyStats()
+end)
+
+timer.Create("updateSVstats", 60, -1, function()
+	UpdatePlyStats()
+	IDsort()
+end)
 
 local PANEL = {}
 
@@ -221,6 +235,82 @@ function PANEL:Init()
 	end
 
 	self.ownMapCount = table.Count(maps)
+
+	local players = player.GetAll()
+    local numPlayers = #players
+    local columns = 3
+    local rows = math.ceil(numPlayers / columns)
+    local entryGap = 5
+    local padding = 10
+    local entryHeight = 60
+
+    local panelWidth = mainMenu:GetWide()
+    local entryWidth = (panelWidth - padding * 2 - entryGap * (columns - 1)) / columns
+    local panelHeight = padding * 2 + rows * entryHeight + (rows - 1) * entryGap
+
+    local playerListPanel = vgui.Create("DPanel", mainMenu:GetParent())
+    playerListPanel:SetSize(panelWidth, panelHeight)
+    playerListPanel:SetPos(mainMenu:GetX(), mainMenu:GetY() + mainMenu:GetTall() + 10)
+    playerListPanel.Paint = function(self, w, h)
+        surface.SetDrawColor(25, 25, 25)
+        surface.DrawRect(0, 0, w, h)
+        surface.SetMaterial(vignette)
+        surface.DrawTexturedRect(0, 0, w, h)
+    end
+    playerListPanel.Think = function(self)
+        if not IsValid(mainMenu) then self:Remove() return end
+        playerListPanel:SetAlpha(mainMenu:GetAlpha())
+    end
+
+    local function RefreshPlayerList()
+    	playerListPanel:Clear()
+	    for i, ply in ipairs(players) do
+	        local col = (i - 1) % columns
+	        local row = math.floor((i - 1) / columns)
+	        local xPos = padding + col * (entryWidth + entryGap)
+	        local yPos = padding + row * (entryHeight + entryGap)
+
+	        local entry = vgui.Create("DPanel", playerListPanel)
+	        entry:SetSize(entryWidth, entryHeight)
+	        entry:SetPos(xPos, yPos)
+	        entry.Paint = function(self, w, h)
+	        	if (not IsValid(ply) or numPlayers ~= #player.GetAll()) then players = player.GetAll() numPlayers = #players RefreshPlayerList() return  end
+	            draw.RoundedBox(4, 0, 0, w, h, ply:Alive() and Color(50, LocalPlayer() == ply and 60 or 50, 50, 200) or Color(80, 40, 40, 200))
+	              draw.SimpleText(ply:Nick()..(ply:Alive() and "" or " (DEAD)"), "DermaDefaultBold", 50, 5, Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+	            local totalEchoes = ply:GetNWInt("TotalEchoes", 0)
+	            local mapEchoes = ply:GetNWInt("MapEchoes", 0)
+	            draw.SimpleText("Echoes: " .. totalEchoes .. " | This map: " .. mapEchoes, "DermaDefault", 50, 25, Color(200, 200, 200), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+	            draw.SimpleText("Ping: " .. ply:Ping(), "DermaDefault", 50, 45, Color(200, 200, 200), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+	        end
+
+	        local avatar = vgui.Create("AvatarImage", entry)
+	        avatar:SetSize(40, 40)
+	        avatar:SetPos(5, (entryHeight - 40) / 2)
+	        avatar:SetPlayer(ply, 40)
+
+	        if LocalPlayer() == ply then continue end
+	        local teleportButton = vgui.Create("DButton", entry)
+	        teleportButton:SetSize(30, 30)
+	        teleportButton:SetPos(entry:GetWide() - 35, entryHeight - 35)
+	        teleportButton:SetText("")
+	        teleportButton.Paint = function(self, w, h)
+	            surface.SetDrawColor(
+	                self:IsDown() and Color(125, 125, 125) or 
+	                self:IsHovered() and Color(100, 100, 100) or 
+	                Color(75, 75, 75)
+	            )
+	            surface.SetMaterial(teleportMat)
+	            surface.DrawTexturedRect(0, 0, w, h)
+	        end
+	        teleportButton.DoClick = function()
+	            EchoSound("button_click")
+	            net.Start("echoTeleport")
+	                net.WriteVector(ply:GetPos())
+	            net.SendToServer()
+	        end
+	    end
+	end
+	RefreshPlayerList()
 end
 
 function PANEL:UpdateStats(newUserCount, newEchoCount, newMapCount, newMaps)
