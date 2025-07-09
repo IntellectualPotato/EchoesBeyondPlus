@@ -319,7 +319,7 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 			end
 		end
 		local seq = idToSequential[echo.id] or -1
-		echo.skin = seq == 1 and "star" or "default"
+		echo.skin = (seq == 1 or echo.special) and "star" or "default"
 
 		if (echo.init == 0) then continue end -- Skip rendering if echo is not initialized
 

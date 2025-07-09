@@ -1,3 +1,4 @@
+include("modules/interface/cl_echomenu.lua")
 
 -- The main menu
 local echoMat = Material("echoesbeyond/echo_simple.png", "smooth")
@@ -92,6 +93,21 @@ function PANEL:Init()
 		else
 			vgui.Create("echoPersonalEchoesMenu")
 		end
+	end
+
+	local allEchoes = vgui.Create("DButton", self)
+	allEchoes:SetSize(48, 48)
+	allEchoes:SetPos(10, 48 + 80)
+	allEchoes:SetText("")
+	allEchoes.Paint = function(self, width, height)
+		surface.SetDrawColor(self:IsDown() and Color(100, 100, 100) or self:IsHovered() and Color(75, 75, 75) or Color(50, 50, 50))
+		surface.SetMaterial(Material("echoesbeyond/echo_multi.png", "smooth"))
+		surface.DrawTexturedRect(-7, -7, width + 14, height + 14)
+	end
+	allEchoes.DoClick = function()
+		EchoSound("button_click")
+		if (IsValid(mainMenu)) then mainMenu:Close(true) end
+		LocalPlayer():ConCommand("echoes_menu")
 	end
 
 	local settingsOption = vgui.Create("DButton", self)
