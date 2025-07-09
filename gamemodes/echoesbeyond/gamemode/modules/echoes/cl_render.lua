@@ -65,26 +65,82 @@ local activationDist = 6500 -- How close the player should be to activate the ec
 local echoFadeDist = 2500 -- How far the echo should start fading
 local echoToGroundFrac = 0
 
+resource.AddSingleFile("addons/gfnf/resource/fonts/8bitoperator_jve.ttf")
+surface.CreateFont("utdr_font", {
+	font = "8bitoperator JVE",
+	size = 25,
+	antialias = false,
+	extended = true,
+	shadow = true,
+	outline = true
+})
 
 local TBG = Material("echoesbeyond/Skins/TBGnote.png", "mips")
 local TBGsnd = {}
 for i = 1,11 do
 	table.insert(TBGsnd, tostring("TBG/"..i))
 end
+
+--example with all valid parameters
+--[[
+ ["example"] = {
+        mat1 = Material("echoesbeyond/Skins/example.png", "mips"), --mips isnt 100% needed	
+        mat2 = Material("echoesbeyond/Skins/example.png", "mips"),
+        dotmat = Material("echoesbeyond/Skins/example.png", "mips"),
+		dotWave = 100,
+        sound = "echo_activate",
+        color = Color(150, 255, 255),
+        point = false,
+		font = "TargetID"
+    },
+]]
+
 local skins = {
-    ["default"] = {echoMat, echoBlankMat, echoDotSingleMat, "echo_activate"},
+    ["default"] = {
+        mat1 = echoMat,
+        mat2 = echoBlankMat,
+        dotmat = echoDotSingleMat,
+		dotWave = 100,
+        sound = "echo_activate",
+        color = Color(150, 255, 255),
+        point = false,
+		font = "TargetID"
+    },
     ["star"] = {
-        Material("echoesbeyond/Skins/starecho.png", "mips"),
-        Material("echoesbeyond/Skins/starecho_blank.png", "mips"),
-		echoDotSingleMat,
-		"echo_activate_star"
+        mat1 = Material("echoesbeyond/Skins/starecho.png", "mips"),
+        mat2 = Material("echoesbeyond/Skins/starecho_blank.png", "mips"),
+        dotmat = echoDotSingleMat,
+		dotWave = 100,
+        sound = "echo_activate_star",
+        color = Color(150, 255, 255),
+        point = false,
+		font = "TargetID"
     },
 	["tbg"] = {
-		TBG,
-		TBG,
-		empty,
-		TBGsnd	
-	}
+        mat1 = TBG,
+        mat2 = TBG,
+        dotmat = empty,
+		dotWave = 100,
+        sound = TBGsnd,
+        color = Color(140, 245, 245),
+        point = false,
+		font = "TargetID"
+	},
+	["UTDR"] = {
+        mat1 = Material("echoesbeyond/Skins/UTDRsoul2.png"),
+        mat2 = Material("echoesbeyond/Skins/UTDRsoul.png"),
+        dotmat = {
+            mat = Material("echoesbeyond/Skins/pixeldot.png"),
+            posOffset = Vector(0, 0, 1),
+            scale = 0.022,
+            x_coords = {-1200+10, -960, -720-10}
+        },
+		dotWave = 50,
+        sound = "utdr_spell",
+        color = Color(100, 200, 255),
+        point = true,
+		font = "utdr_font"
+    }
 }
 
 local function getSkin(echo)
@@ -92,13 +148,15 @@ local function getSkin(echo)
 end
 
 local mapSkins = {
-	["gm_flatgrass"] = "default",
-	["gm_construct"] = "default",
+	["gm_mttresort"] = "UTDR",
+	["ttt_mttresort"] = "UTDR",
+	["gm_deltarune_card_castle"] = "UTDR",
+	["gm_deltarune"] = "UTDR",
+	["gm_finalcorridor"] = "UTDR"
 }
 
 local mapPrefixSkins = {
-	["tbg_"] = "tbg",
-	["rp_"] = "default",
+	["tbg_"] = "tbg"
 }
 
 local function DetermineDefaultSkin()
@@ -138,26 +196,30 @@ local function UpdateEchoTextCache(inEchoes)
 	local disableSigning = GetConVar("echoes_disablesigning"):GetBool()
 
 	for _, echo in ipairs(inEchoes) do
-		if (echo.cachedText) then continue end -- Already cached
+		local skin = getSkin(echo)
+		local font = (skin and skin.font) or "TargetID"
 
-		-- Cache wrapped text to avoid recalculations
+		-- If text is already cached with the correct font, skip it
+		if (echo.cachedText and echo.cachedFont == font) then continue end
+		echo.cachedFont = font -- Store which font was used for caching
+
 		local text = echo.text
-
 		if (disableSigning) then text = RemoveSigning(text) end
 
 		local words = string.Explode(" ", text)
 		local lines = {}
 		local line = ""
 
+		surface.SetFont(font) -- Use the correct font for measuring text size
+
 		for j = 1, #words do
 			local word = words[j]
 
 			if (surface.GetTextSize(line .. " " .. word) > 512) then
 				table.insert(lines, line)
-
 				line = word
 			else
-				line = (line == ""and word or line .. " " .. word)
+				line = (line == "" and word or line .. " " .. word)
 			end
 		end
 
@@ -171,7 +233,7 @@ local function UpdateEchoTextCache(inEchoes)
 	end
 end
 
-local cameraData = { 
+local cameraData = {
 	cx = 0, cy = 0, cz = 0,
 	fx = 0, fy = 0, fz = 0
 }
@@ -192,7 +254,7 @@ local function GetSortedVisibleEchoes()
 		local x, y, z = GetEchoPosition(echo)
 		local dot = ((cx-x) * fx + (cy-y) * fy + (cz-z) * fz)
 
-		if (dot > 0) then continue end -- Don't bother with anything behind the camera
+		if (dot > 0) then continue end
 
 		sortedEchoes[#sortedEchoes+1] = echo
 	end
@@ -248,8 +310,10 @@ local function UpdateEchoInteractions(inEchoes, curTimeSpeed, dt)
 					if (gabenMode) then
 						EchoSound(table.Random(gabenIntroSounds), nil, 0.75)
 					else
+						local seq = idToSequential[echo.id] or -1
+						echo.skin = (seq == 1 or echo.special) and "star" or DefaultSkin
 						local skin = getSkin(echo)
-						EchoSound( istable(skin[4]) and skin[4][math.random(1, #skin[4])] or (getSkin(echo)[4]) or "echo_activate", echo.special and math.random(115, 125) or echo.explicit and math.random(65, 75) or math.random(95, 105), echo.read and 0.4 or 1)
+						EchoSound(istable(skin.sound) and skin.sound[math.random(1, #skin.sound)] or skin.sound or "echo_activate", echo.special and math.random(115, 125) or echo.explicit and math.random(65, 75) or math.random(95, 105), echo.read and 0.4 or 1)
 					end
 				end
 
@@ -303,32 +367,26 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 	local profanity = GetConVar("echoes_profanity"):GetBool()
 	local showRead = GetConVar("echoes_showread"):GetBool()
 	local disableReadSys = GetConVar("echoes_disablereadsys"):GetBool()
-	local lerpFactor = math.Clamp(frameTime * 5, 0, 1)
 	local curTimeSpeed = curTime * 1.5
-	local readOffset = Vector(0, 0, 20)
 	local showDlights = GetConVar("echoes_dlights"):GetBool()
 	local enableAir = GetConVar("echoes_enableairechoes"):GetBool()
 	local drawColor = Color(0, 0, 0)
 
 	echoToGroundFrac = Lerp(frameTime * 2, echoToGroundFrac, enableAir and 0 or 1)
 
-	surface.SetFont("TargetID") -- Set the font for text size calculations
-
-	-- Compute squared distance to all echoes
 	ComputeSqrEchoDist(clientPos)
-
-	-- Update interactions with all echoes (relies on computed distances)
 	UpdateEchoInteractions(echoes, curTimeSpeed, frameTime)
-
-	-- Create a shallow copy of echoes and sort by distance (squared)
 	local sortedEchoes = GetSortedVisibleEchoes()
 	local echoCount = #sortedEchoes
-
 	UpdateEchoRotations(sortedEchoes, frameTime)
-	UpdateEchoTextCache(sortedEchoes)
 
-	render.PushFilterMag(TEXFILTER.ANISOTROPIC)
-	render.PushFilterMin(TEXFILTER.ANISOTROPIC)
+	for i = 1, echoCount do
+		local echo = sortedEchoes[i]
+		local seq = idToSequential[echo.id] or -1
+		echo.skin = (seq == 1 or echo.special) and "star" or DefaultSkin
+	end
+
+	UpdateEchoTextCache(sortedEchoes)
 
 	for i = 1, echoCount do
 		local echo = sortedEchoes[i]
@@ -344,11 +402,9 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 		local bOwner = echo.isOwner
 		if read and bOwner then read = false end
 
-		-- Update initialization factor based on explicit flag and profanity setting
 		if (read and !showRead) then
 			echo.readTime = echo.readTime or curTime
 
-			-- Fade out echo if it was read for more than 60 seconds
 			if (curTime - echo.readTime > 60) then
 				echo.init = math.max(echo.init - frameTime, 0)
 			end
@@ -359,10 +415,8 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 				echo.init = math.min(echo.init + frameTime, 1)
 			end
 		end
-		local seq = idToSequential[echo.id] or -1
-		echo.skin = (seq == 1 or echo.special) and "star" or DefaultSkin
 
-		if (echo.init == 0) then continue end -- Skip rendering if echo is not initialized
+		if (echo.init == 0) then continue end
 
 		local loading = echo.loading
 		echo.z_offset = echo.z_offset or 0
@@ -375,7 +429,7 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 			echo.partyOffsetLerp = LerpVector(frameTime * 3, echo.partyOffsetLerp, (echo.partyOffset or Vector(0, 0, 0)))
 			__vadd(echo.drawPos, echo.partyOffsetLerp)
 			lastPartyModeTime = curTime
-		elseif lastPartyModeTime ~= 0 and curTime - lastPartyModeTime < 10 then -- for about 10 seconds after partymode, lerp party offset back to 0
+		elseif lastPartyModeTime ~= 0 and curTime - lastPartyModeTime < 10 then
 			echo.partyOffsetLerp = echo.partyOffsetLerp or Vector()
 			__vmul(echo.partyOffsetLerp, math.max(1 - frameTime * 3, 0))
 			__vadd(echo.drawPos, echo.partyOffsetLerp)
@@ -385,15 +439,52 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 		local special = echo.special
 		local active = echo.active
 		local explicit = echo.explicit
+		local skin = getSkin(echo)
+		local font = (skin and skin.font) or "TargetID" -- Get the font for this skin
 
-		-- Render dynamic light if within render distance (using echo.pos for distance)
-		if (echoDistSqr <= lightRenderDist and showDlights and i >= (echoCount - (32 - dLightCount))) then -- Source can only handle 32 dynamic lights, so that's the
-			local r = !read and !loading and (special and 255 or explicit and 255 or bOwner and 255 or (100 + 155 * active)) or (25 + 230 * active) -- limit we use, minus the number of map-created dynamic lights
-			local g = !read and !loading and (special and (255 * active) or explicit and (25 + 230 * active) or bOwner and 255 or 255) or (25 + 230 * active)
-			local b = !read and !loading and (special and 255 or explicit and (25 + 230 * active) or bOwner and (255 * active) or 255) or (25 + 230 * active)
+		if (skin.point) then
+			render.PushFilterMag(TEXFILTER.POINT)
+			render.PushFilterMin(TEXFILTER.POINT)
+		else
+			render.PushFilterMag(TEXFILTER.ANISOTROPIC)
+			render.PushFilterMin(TEXFILTER.ANISOTROPIC)
+		end
 
+		local r, g, b
+		local rDraw, gDraw, bDraw
+
+		if (not read and not loading) then
+			if (special) then
+				r, g, b = 255, 255 * active, 255
+				rDraw, bDraw = 200 + 55 * active, 200 + 55 * active
+				gDraw = 255 * active
+			elseif (explicit) then
+				r, g, b = 255, 25 + 230 * active, 25 + 230 * active
+				rDraw = 255
+				gDraw, bDraw = 50 + 205 * active, 50 + 205 * active
+			elseif (bOwner) then
+				r, g, b = 255, 255, 255 * active
+				rDraw, gDraw = 255, 255
+				bDraw = 255 * active
+			else
+				local baseDrawColor = skin.color or Color(150, 255, 255)
+				local baseDlightColor = Color(math.max(0, baseDrawColor.r - 50), baseDrawColor.g, baseDrawColor.b)
+
+				r = Lerp(active, baseDlightColor.r, 255)
+				g = Lerp(active, baseDlightColor.g, 255)
+				b = Lerp(active, baseDlightColor.b, 255)
+
+				rDraw = Lerp(active, baseDrawColor.r, 255)
+				gDraw = Lerp(active, baseDrawColor.g, 255)
+				bDraw = Lerp(active, baseDrawColor.b, 255)
+			end
+		else
+			r, g, b = 25 + 230 * active, 25 + 230 * active, 25 + 230 * active
+			rDraw, gDraw, bDraw = 100 + 155 * active, 100 + 155 * active, 100 + 155 * active
+		end
+
+		if (echoDistSqr <= lightRenderDist and showDlights and i >= (echoCount - (32 - dLightCount))) then
 			local dLight = DynamicLight(echo.id)
-
 			if (dLight) then
 				dLight.Pos = echo.drawPos
 				dLight.r = partyMode and echo.partyColor and echo.partyColor.r or r
@@ -406,20 +497,13 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 			end
 		end
 
-		-- Draw the echo's texture and text
-		local rDraw = !read and !loading and (special and (200 + 55 * active) or explicit and 255 or bOwner and 255 or (150 + 105 * active)) or (100 + 155 * active)
-		local gDraw = !read and !loading and (special and (255 * active) or explicit and (50 + 205 * active) or bOwner and 255 or 255) or (100 + 155 * active)
-		local bDraw = !read and !loading and (special and (200 + 55 * active) or explicit and (50 + 205 * active) or bOwner and (255 * active) or 255) or (100 + 155 * active)
-
 		drawColor:SetUnpacked(rDraw, gDraw, bDraw, alpha)
 
-		-- Main echo
 		ComputeEchoMtx(echo_mtx, echo.drawPos, echo._angle, 0.1)
 		cam.PushModelMatrix(echo_mtx, true)
 
-		local skin = getSkin(echo)
 		surface.SetDrawColor(partyMode and echo.partyColor or drawColor)
-		surface.SetMaterial((loading or active > 0) and skin[2] or skin[1])
+		surface.SetMaterial((loading or active > 0) and skin.mat2 or skin.mat1)
 		surface.DrawTexturedRect(-96, -96, 192, 192)
 
 		if (loading) then
@@ -432,8 +516,8 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 			cam.IgnoreZ(true)
 
 			for j = 1, #echo.cachedText do
-				draw.SimpleText(echo.cachedText[j], "TargetID", 1, -(150 + j * 15), Color(0, 0, 0, math.min(active * 255, alpha)), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-				draw.SimpleText(echo.cachedText[j], "TargetID", 0, -(151 + j * 15), Color(255, 255, 255, math.min(active * 255, alpha)), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+				draw.SimpleText(echo.cachedText[j], font, 1, -(150 + j * 15), Color(0, 0, 0, math.min(active * 255, alpha)), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+				draw.SimpleText(echo.cachedText[j], font, 0, -(151 + j * 15), Color(255, 255, 255, math.min(active * 255, alpha)), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 			end
 
 			if GetConVar("echoes_debuginfo"):GetBool() then
@@ -456,11 +540,11 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 
 				local txt = "ID: " .. idStr .. " | " .. seqStr
 
-				draw.SimpleText(txt, "TargetID", 1, 100, Color(0, 0, 0, math.min(active * 255, alpha)), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-				draw.SimpleText(txt, "TargetID", 0, 101, Color(233, 233, 0, math.min(active * 255, alpha)), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+				draw.SimpleText(txt, font, 1, 100, Color(0, 0, 0, math.min(active * 255, alpha)), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+				draw.SimpleText(txt, font, 0, 101, Color(233, 233, 0, math.min(active * 255, alpha)), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 
 				if echo.inVoid then
-					draw.SimpleText("VOID", "TargetID", 0, 80, Color(255, 100, 100, math.min(echo.active * 255, alpha)), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+					draw.SimpleText("VOID", font, 0, 80, Color(255, 100, 100, math.min(echo.active * 255, alpha)), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 				end
 
 			end
@@ -471,27 +555,33 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 
 		cam.PopModelMatrix()
 
-		-- Animated dots
-		if (alpha != 0 and active != 0) then
-			-- Scaled down matrix for better integer coordinate animation
-			ComputeEchoMtx(echo_mtx, echo.drawPos, echo._angle, 0.01)
+		if (alpha ~= 0 and active ~= 0) then
+			local dot_config = skin.dotmat
+			local is_custom = (type(dot_config) == "table" and dot_config.mat)
+
+			local dot_material = is_custom and dot_config.mat or dot_config
+			local pos_offset   = is_custom and dot_config.posOffset or Vector(0, 0, 0)
+			local scale        = is_custom and dot_config.scale or 0.01
+			local x_coords     = is_custom and (dot_config.x_coords or {}) or {-1240, -960, -680}
+
+			ComputeEchoMtx(echo_mtx, echo.drawPos + pos_offset, echo._angle, scale)
 			cam.PushModelMatrix(echo_mtx, true)
 
-			surface.SetMaterial(skin[3])
+			surface.SetMaterial(dot_material)
 
-			local z = (0.5 * math.sin(curTimeSpeed)) * active * 100
-			surface.DrawTexturedRect(-1240, -960 + z, 1920, 1920)
+			local z = (0.5 * math.sin(curTimeSpeed)) * active * skin.dotWave
+			surface.DrawTexturedRect(x_coords[1] or 0, -960 + z, 1920, 1920)
 
-			local z = (0.5 * math.sin(curTimeSpeed + 20)) * active * 100
-			surface.DrawTexturedRect(-960, -960 + z, 1920, 1920)
+			local z = (0.5 * math.sin(curTimeSpeed + 20)) * active * skin.dotWave
+			surface.DrawTexturedRect(x_coords[2] or 0, -960 + z, 1920, 1920)
 
-			local z = (0.5 * math.sin(curTimeSpeed + 40)) * active * 100
-			surface.DrawTexturedRect(-680, -960 + z, 1920, 1920)
+			local z = (0.5 * math.sin(curTimeSpeed + 40)) * active * skin.dotWave
+			surface.DrawTexturedRect(x_coords[3] or 0, -960 + z, 1920, 1920)
 
 			cam.PopModelMatrix()
 		end
-	end
 
-	render.PopFilterMag()
-	render.PopFilterMin()
+		render.PopFilterMag()
+		render.PopFilterMin()
+	end
 end)
