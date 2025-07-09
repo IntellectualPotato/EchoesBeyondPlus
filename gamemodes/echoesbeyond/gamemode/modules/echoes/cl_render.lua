@@ -59,22 +59,62 @@ local echoMat = Material("echoesbeyond/echo.png", "mips")
 local echoBlankMat = Material("echoesbeyond/echo_blank.png", "mips")
 local echoDotsMat = Material("echoesbeyond/echo_dots.png", "mips")
 local echoDotSingleMat = Material("echoesbeyond/echo_dot_single.png", "mips")
+local empty = Material("echoesbeyond/nothing.png", "mips")
 local lightRenderDist = 3000000 -- How far the dynamic light should render
 local activationDist = 6500 -- How close the player should be to activate the echo
 local echoFadeDist = 2500 -- How far the echo should start fading
 local echoToGroundFrac = 0
 
+
+local TBG = Material("echoesbeyond/Skins/TBGnote.png", "mips")
+local TBGsnd = {}
+for i = 1,11 do
+	table.insert(TBGsnd, tostring("TBG/"..i))
+end
 local skins = {
-    ["default"] = {echoMat, echoBlankMat},
+    ["default"] = {echoMat, echoBlankMat, echoDotSingleMat, "echo_activate"},
     ["star"] = {
         Material("echoesbeyond/Skins/starecho.png", "mips"),
-        Material("echoesbeyond/Skins/starecho_blank.png", "mips")
-    }
+        Material("echoesbeyond/Skins/starecho_blank.png", "mips"),
+		echoDotSingleMat,
+		"echo_activate_star"
+    },
+	["tbg"] = {
+		TBG,
+		TBG,
+		empty,
+		TBGsnd	
+	}
 }
 
 local function getSkin(echo)
 	return skins[echo.skin]
 end
+
+local mapSkins = {
+	["gm_flatgrass"] = "default",
+	["gm_construct"] = "default",
+}
+
+local mapPrefixSkins = {
+	["tbg_"] = "tbg",
+	["rp_"] = "default",
+}
+
+local function DetermineDefaultSkin()
+	local map = game.GetMap() or ""
+	if mapSkins[map] then
+		return mapSkins[map]
+	end
+	for prefix, skin in pairs(mapPrefixSkins) do
+		if string.StartWith(map, prefix) then
+			return skin
+		end
+	end
+	return "default"
+end
+
+local DefaultSkin = DetermineDefaultSkin()
 
 local function GetEchoPosition(echo)
 	local x, y, z = __vunpack(echo.pos)
@@ -208,7 +248,8 @@ local function UpdateEchoInteractions(inEchoes, curTimeSpeed, dt)
 					if (gabenMode) then
 						EchoSound(table.Random(gabenIntroSounds), nil, 0.75)
 					else
-						EchoSound(echo.skin  == "star" and "echo_activate_star" or "echo_activate", echo.special and math.random(115, 125) or echo.explicit and math.random(65, 75) or math.random(95, 105), echo.read and 0.4 or 1)
+						local skin = getSkin(echo)
+						EchoSound( istable(skin[4]) and skin[4][math.random(1, #skin[4])] or (getSkin(echo)[4]) or "echo_activate", echo.special and math.random(115, 125) or echo.explicit and math.random(65, 75) or math.random(95, 105), echo.read and 0.4 or 1)
 					end
 				end
 
@@ -319,7 +360,7 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 			end
 		end
 		local seq = idToSequential[echo.id] or -1
-		echo.skin = (seq == 1 or echo.special) and "star" or "default"
+		echo.skin = (seq == 1 or echo.special) and "star" or DefaultSkin
 
 		if (echo.init == 0) then continue end -- Skip rendering if echo is not initialized
 
@@ -376,8 +417,9 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 		ComputeEchoMtx(echo_mtx, echo.drawPos, echo._angle, 0.1)
 		cam.PushModelMatrix(echo_mtx, true)
 
+		local skin = getSkin(echo)
 		surface.SetDrawColor(partyMode and echo.partyColor or drawColor)
-		surface.SetMaterial((loading or active > 0) and getSkin(echo)[2] or getSkin(echo)[1])
+		surface.SetMaterial((loading or active > 0) and skin[2] or skin[1])
 		surface.DrawTexturedRect(-96, -96, 192, 192)
 
 		if (loading) then
@@ -435,7 +477,7 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 			ComputeEchoMtx(echo_mtx, echo.drawPos, echo._angle, 0.01)
 			cam.PushModelMatrix(echo_mtx, true)
 
-			surface.SetMaterial(echoDotSingleMat)
+			surface.SetMaterial(skin[3])
 
 			local z = (0.5 * math.sin(curTimeSpeed)) * active * 100
 			surface.DrawTexturedRect(-1240, -960 + z, 1920, 1920)
