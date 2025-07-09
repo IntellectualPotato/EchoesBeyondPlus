@@ -75,6 +75,58 @@ function PANEL:Init()
 
 	searchBar:RequestFocus()
 
+	self.FilterShowOnlyEchoed = vgui.Create("DCheckBoxLabel", mapMenu)
+	self.FilterShowOnlyEchoed:SetText("Show only echoed on")
+	self.FilterShowOnlyEchoed:SetPos(10, 10)
+	self.FilterShowOnlyEchoed:SetValue(0)
+	self.FilterShowOnlyEchoed.OnChange = function()
+		if self.FilterShowOnlyEchoed:GetChecked() then
+			self.FilteshowOnlyNotEchoed:SetValue(0)
+		end
+		self:ListMaps(searchBar:GetValue())
+	end
+
+	self.FilteshowOnlyNotEchoed = vgui.Create("DCheckBoxLabel", mapMenu)
+	self.FilteshowOnlyNotEchoed:SetText("Show only not echoed on")
+	self.FilteshowOnlyNotEchoed:SetPos(10, 30)
+	self.FilteshowOnlyNotEchoed:SetValue(0)
+	self.FilteshowOnlyNotEchoed.OnChange = function()
+		if self.FilteshowOnlyNotEchoed:GetChecked() then
+			self.FilterShowOnlyEchoed:SetValue(0)
+		end
+		self:ListMaps(searchBar:GetValue())
+	end
+
+	self.SortByPersonalEchoes = vgui.Create("DCheckBoxLabel", mapMenu)
+	self.SortByPersonalEchoes:SetText("Sort by my echo count")
+	self.SortByPersonalEchoes:SetPos(10, 50)
+	self.SortByPersonalEchoes:SetValue(0)
+	self.SortByPersonalEchoes.OnChange = function()
+		self:ListMaps(searchBar:GetValue())
+	end
+
+	self.FilterInstalledOnly = vgui.Create("DCheckBoxLabel", mapMenu)
+	self.FilterInstalledOnly:SetText("Installed Only")
+	self.FilterInstalledOnly:SetPos(750, 10)
+	self.FilterInstalledOnly:SetValue(0)
+	self.FilterInstalledOnly.OnChange = function()
+		if self.FilterInstalledOnly:GetChecked() then
+			self.FilterUninstalledOnly:SetValue(0)
+		end
+		self:ListMaps(searchBar:GetValue())
+	end
+
+	self.FilterUninstalledOnly = vgui.Create("DCheckBoxLabel", mapMenu)
+	self.FilterUninstalledOnly:SetText("Uninstalled Only")
+	self.FilterUninstalledOnly:SetPos(750, 30)
+	self.FilterUninstalledOnly:SetValue(0)
+	self.FilterUninstalledOnly.OnChange = function()
+		if self.FilterUninstalledOnly:GetChecked() then
+			self.FilterInstalledOnly:SetValue(0)
+		end
+		self:ListMaps(searchBar:GetValue())
+	end
+
 	self.mapListPanel = vgui.Create("DScrollPanel", self)
 	self.mapListPanel:SetPos(10, 130)
 	self.mapListPanel:SetSize(self:GetWide() - 20, self:GetTall() - 140)
@@ -110,9 +162,42 @@ function PANEL:ListMaps(filter)
 
 	self.mapList = {}
 
-	for name, amount in SortedPairsByValue(mapList, true) do
+	local showEchoed = self.FilterShowOnlyEchoed and self.FilterShowOnlyEchoed:GetChecked()
+	local showNotEchoed = self.FilteshowOnlyNotEchoed and self.FilteshowOnlyNotEchoed:GetChecked()
+	local showInstalled = self.FilterInstalledOnly and self.FilterInstalledOnly:GetChecked()
+	local showUninstalled = self.FilterUninstalledOnly and self.FilterUninstalledOnly:GetChecked()
+	local sortByPersonalEchoes = self.SortByPersonalEchoes and self.SortByPersonalEchoes:GetChecked()
+
+	local mapPairs
+	if sortByPersonalEchoes then
+		local t = {}
+		for name, amount in pairs(mapList) do
+			t[#t+1] = {name=name, amount=amount, personal=EchoesOnMaps and EchoesOnMaps[name] or 0}
+		end
+		table.SortByMember(t, "personal", false)
+		mapPairs = t
+	else
+		mapPairs = {}
+		for name, amount in SortedPairsByValue(mapList, true) do
+			mapPairs[#mapPairs+1] = {name=name, amount=amount}
+		end
+	end
+
+	for _, v in ipairs(mapPairs) do
+		local name = v.name
+		local amount = v.amount
+
 		if (filter and !name:lower():find(filter:lower())) then continue end
 		if (!filter and amount < 10) then continue end
+
+		local echoed = EchoesOnMaps and EchoesOnMaps[name] and EchoesOnMaps[name] > 0
+		local notEchoed = not (EchoesOnMaps and EchoesOnMaps[name] and EchoesOnMaps[name] > 0)
+		local installed = self.installedMaps[name]
+
+		if showEchoed and not echoed then continue end
+		if showNotEchoed and not notEchoed then continue end
+		if showInstalled and not installed then continue end
+		if showUninstalled and installed then continue end
 
 		local entry = vgui.Create("DPanel", self.mapListPanel)
 		entry:Dock(TOP)
@@ -148,9 +233,10 @@ function PANEL:ListMaps(filter)
 				gui.OpenURL("https://steamcommunity.com/workshop/browse/?appid=4000&searchtext=" .. name .. "&requiredtags%5B%5D=Map&requiredtags%5B%5D=Addon")
 			end
 		end
-
+		--[[
 		entry:SetAlpha(0)
 		entry:AlphaTo(255, 0.25, 0.02 * mapNum)
+		]] --this may make it funky with some stuff and its annoying to wait for it
 		self.mapList[name] = entry
 
 		mapNum = mapNum + 1
