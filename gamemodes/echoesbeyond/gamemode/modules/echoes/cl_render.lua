@@ -87,16 +87,16 @@ end
         mat1 = Material("echoesbeyond/Skins/example.png", "mips"), --mips isnt 100% needed	
         mat2 = Material("echoesbeyond/Skins/example.png", "mips"),
         dotmat = Material("echoesbeyond/Skins/example.png", "mips"),
+		mat_read = Material("echoesbeyond/Skins/example.png", "mips"),
 		dotWave = 100,
         sound = "echo_activate",
         color = Color(150, 255, 255),
+		color_light = Color(150, 255, 255),
         point = false,
 		font = "TargetID"
     },
-]]
 
-local skins = {
-    ["default"] = {
+	 ["default"] = {
         mat1 = echoMat,
         mat2 = echoBlankMat,
         dotmat = echoDotSingleMat,
@@ -106,25 +106,27 @@ local skins = {
         point = false,
 		font = "TargetID"
     },
+
+]]
+
+local skins = {
+    ["default"] = {
+        mat1 = echoMat,
+        mat2 = echoBlankMat,
+        dotmat = echoDotSingleMat,
+    },
     ["star"] = {
         mat1 = Material("echoesbeyond/Skins/starecho.png", "mips"),
         mat2 = Material("echoesbeyond/Skins/starecho_blank.png", "mips"),
         dotmat = echoDotSingleMat,
-		dotWave = 100,
         sound = "echo_activate_star",
-        color = Color(150, 255, 255),
-        point = false,
-		font = "TargetID"
     },
 	["tbg"] = {
         mat1 = TBG,
         mat2 = TBG,
         dotmat = empty,
-		dotWave = 100,
         sound = TBGsnd,
         color = Color(140, 245, 245),
-        point = false,
-		font = "TargetID"
 	},
 	["UTDR"] = {
         mat1 = Material("echoesbeyond/Skins/UTDRsoul2.png"),
@@ -140,7 +142,16 @@ local skins = {
         color = Color(100, 200, 255),
         point = true,
 		font = "utdr_font"
-    }
+    },
+	["VoidPlaces"] = {
+        mat1 = Material("echoesbeyond/Skins/vpecho.png", "mips"),
+        mat2 = Material("echoesbeyond/Skins/vpecho_blank.png", "mips"),
+        dotmat = Material("echoesbeyond/Skins/vpecho_dot.png"),
+		mat_read = Material("echoesbeyond/Skins/vpecho_read.png", "mips"),
+        sound = "echo_activate_vp",
+        color = Color(200, 200, 200),
+		color_light = Color(255, 95, 255),
+    },
 }
 
 local function getSkin(echo)
@@ -149,14 +160,17 @@ end
 
 local mapSkins = {
 	["gm_mttresort"] = "UTDR",
-	["ttt_mttresort"] = "UTDR",
+	["ttt_mttresort_v2"] = "UTDR",
 	["gm_deltarune_card_castle"] = "UTDR",
 	["gm_deltarune"] = "UTDR",
-	["gm_finalcorridor"] = "UTDR"
+	["gm_finalcorridor"] = "UTDR",
+	["gm_voidplaces"] = "VoidPlaces",
+	["otherside"] = "VoidPlaces"
 }
 
 local mapPrefixSkins = {
-	["tbg_"] = "tbg"
+	["tbg_"] = "tbg",
+	["vp_"] = "VoidPlaces"
 }
 
 local function DetermineDefaultSkin()
@@ -468,7 +482,8 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 				bDraw = 255 * active
 			else
 				local baseDrawColor = skin.color or Color(150, 255, 255)
-				local baseDlightColor = Color(math.max(0, baseDrawColor.r - 50), baseDrawColor.g, baseDrawColor.b)
+				local baseDrawColor_light = skin.color_light or baseDrawColor
+				local baseDlightColor = Color(math.max(0, baseDrawColor_light.r - 50), baseDrawColor_light.g, baseDrawColor_light.b)
 
 				r = Lerp(active, baseDlightColor.r, 255)
 				g = Lerp(active, baseDlightColor.g, 255)
@@ -499,13 +514,45 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 
 		drawColor:SetUnpacked(rDraw, gDraw, bDraw, alpha)
 
-		ComputeEchoMtx(echo_mtx, echo.drawPos, echo._angle, 0.1)
+ComputeEchoMtx(echo_mtx, echo.drawPos, echo._angle, 0.1)
 		cam.PushModelMatrix(echo_mtx, true)
-
-		surface.SetDrawColor(partyMode and echo.partyColor or drawColor)
-		surface.SetMaterial((loading or active > 0) and skin.mat2 or skin.mat1)
-		surface.DrawTexturedRect(-96, -96, 192, 192)
-
+		
+		local finalColor = partyMode and echo.partyColor or drawColor
+		
+		--logic for skins with a custom read texture
+		if (skin.mat_read) then
+			echo.readTransition = echo.readTransition or (read and 1 or 0)
+			local targetReadTransition = (read and not bOwner) and 1 or 0
+			echo.readTransition = Lerp(frameTime * 2.5, echo.readTransition, targetReadTransition)
+			
+			-- Draw base (normal) texture, fading out
+			if (echo.readTransition < 1) then
+				surface.SetDrawColor(finalColor.r, finalColor.g, finalColor.b, finalColor.a * (1 - echo.readTransition))
+				surface.SetMaterial(skin.mat1)
+				surface.DrawTexturedRect(-96, -96, 192, 192)
+			end
+			
+			if (echo.readTransition > 0) then
+				surface.SetDrawColor(finalColor.r, finalColor.g, finalColor.b, finalColor.a * echo.readTransition)
+				surface.SetMaterial(skin.mat_read)
+				surface.DrawTexturedRect(-96, -96, 192, 192)
+			end
+			
+			--overlay the active/blank texture
+			if (loading or active > 0) then
+				local activeAlpha = loading and finalColor.a or (finalColor.a * active)
+				surface.SetDrawColor(finalColor.r, finalColor.g, finalColor.b, activeAlpha)
+				surface.SetMaterial(skin.mat2)
+				surface.DrawTexturedRect(-96, -96, 192, 192)
+			end
+		
+		--Default behaviour
+		else
+			surface.SetDrawColor(finalColor)
+			surface.SetMaterial((loading or active > 0) and skin.mat2 or skin.mat1)
+			surface.DrawTexturedRect(-96, -96, 192, 192)
+		end
+		
 		if (loading) then
 			surface.SetDrawColor(0, 0, 0, alpha)
 			surface.SetMaterial(echoDotsMat)
@@ -569,13 +616,15 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 
 			surface.SetMaterial(dot_material)
 
-			local z = (0.5 * math.sin(curTimeSpeed)) * active * skin.dotWave
+			local dotWave = skin.dotWave or 100
+
+			local z = (0.5 * math.sin(curTimeSpeed)) * active * dotWave
 			surface.DrawTexturedRect(x_coords[1] or 0, -960 + z, 1920, 1920)
 
-			local z = (0.5 * math.sin(curTimeSpeed + 20)) * active * skin.dotWave
+			local z = (0.5 * math.sin(curTimeSpeed + 20)) * active * dotWave
 			surface.DrawTexturedRect(x_coords[2] or 0, -960 + z, 1920, 1920)
 
-			local z = (0.5 * math.sin(curTimeSpeed + 40)) * active * skin.dotWave
+			local z = (0.5 * math.sin(curTimeSpeed + 40)) * active * dotWave
 			surface.DrawTexturedRect(x_coords[3] or 0, -960 + z, 1920, 1920)
 
 			cam.PopModelMatrix()
