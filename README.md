@@ -1,9 +1,12 @@
 # EchoesBeyondPlus
 A modification/fork of the echoes beyond garry's mod gamemode, just random changes that i put
 Includes:
-* Not very used "skin" system (just makes the first echo on a map be a star)
+* Skin system that gives a few maps and the first echo on the map a unique skin
 * Echoes follow the cameras height to help with vents being annoying
 * A couple extra settings
+* Map list filters (installed, uninstalled, echoed on/not echoed)
+* Map list shows your personal echoes next to the global echoes count
+* More verbose info in the tab menu
 * Couple extra QOL things (will expand)
 
 i am unsure if i will add too much here, but its here!
