@@ -65,13 +65,24 @@ local activationDist = 6500 -- How close the player should be to activate the ec
 local echoFadeDist = 2500 -- How far the echo should start fading
 local echoToGroundFrac = 0
 
-resource.AddSingleFile("addons/gfnf/resource/fonts/8bitoperator_jve.ttf")
+resource.AddSingleFile("addons/EchoesBeyondPlus/resource/fonts/8bitoperator_jve.ttf")
 surface.CreateFont("utdr_font", {
 	font = "8bitoperator JVE",
 	size = 25,
 	antialias = false,
 	extended = true,
 	shadow = true,
+	outline = true
+})
+
+resource.AddSingleFile("addons/EchoesBeyondPlus/resource/fonts/Pixelmax-Regular.ttf")
+surface.CreateFont("vp_font", {
+	font = "Pixelmax",
+	size = 23,
+	antialias = false,
+	extended = true,
+	shadow = true,
+	rotary = true,
 	outline = true
 })
 
@@ -151,6 +162,7 @@ local skins = {
         sound = "echo_activate_vp",
         color = Color(200, 200, 200),
 		color_light = Color(255, 95, 255),
+		font = "vp_font"
     },
 }
 
@@ -383,6 +395,7 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 	local disableReadSys = GetConVar("echoes_disablereadsys"):GetBool()
 	local curTimeSpeed = curTime * 1.5
 	local showDlights = GetConVar("echoes_dlights"):GetBool()
+	local DlightBright = GetConVar("echoes_dlights_brightness"):GetInt()
 	local enableAir = GetConVar("echoes_enableairechoes"):GetBool()
 	local drawColor = Color(0, 0, 0)
 
@@ -505,7 +518,7 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 				dLight.r = partyMode and echo.partyColor and echo.partyColor.r or r
 				dLight.g = partyMode and echo.partyColor and echo.partyColor.g or g
 				dLight.b = partyMode and echo.partyColor and echo.partyColor.b or b
-				dLight.Brightness = 3
+				dLight.Brightness = DlightBright
 				dLight.Size = 256 * (((lightRenderDist - echoDistSqr) / lightRenderDist) * echo.init) * (alpha / 255)
 				dLight.Decay = 1000
 				dLight.DieTime = curTime + 0.1

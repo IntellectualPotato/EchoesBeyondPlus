@@ -70,6 +70,9 @@ function PANEL:Init()
 	CreateCheckbox("Enable smooth view", GetConVar("echoes_smoothview"))
 	CreateCheckbox("Show read Echoes", GetConVar("echoes_showread"))
 	CreateCheckbox("Enable dynamic lights", GetConVar("echoes_dlights"))
+	y = y - 13
+	CreateSlider("Dynamic lights Brightness", GetConVar("echoes_dlights_brightness"), 0.1, 3, 0)
+	y = y + 5
 	CreateCheckbox("Flash game window when a new Echo is created", GetConVar("echoes_windowflash"))
 	CreateCheckbox("Disable Echo 'read' system", GetConVar("echoes_disablereadsys"))
 	CreateCheckbox("Hide author signatures", GetConVar("echoes_disablesigning"))
