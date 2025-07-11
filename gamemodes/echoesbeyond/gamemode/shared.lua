@@ -1,3 +1,14 @@
+CreateConVar(
+  "echoes_allowsandbox",
+  "0",
+  { FCVAR_ARCHIVE, FCVAR_NOTIFY,
+    FCVAR_REPLICATED,
+    FCVAR_CLIENTCMD_CAN_EXECUTE
+  }
+)
+if GetConVar("echoes_allowsandbox"):GetBool() then
+	DeriveGamemode("sandbox")
+end
 
 -- File inclusion functions
 local realms = {}

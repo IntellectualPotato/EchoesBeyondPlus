@@ -75,7 +75,7 @@ function PANEL:Init()
 
 	searchBar:RequestFocus()
 
-	self.FilterShowOnlyEchoed = vgui.Create("DCheckBoxLabel", mapMenu)
+	self.FilterShowOnlyEchoed = vgui.Create("DCheckBoxLabel", self)
 	self.FilterShowOnlyEchoed:SetText("Show only echoed on")
 	self.FilterShowOnlyEchoed:SetPos(10, 10)
 	self.FilterShowOnlyEchoed:SetValue(0)
@@ -86,7 +86,7 @@ function PANEL:Init()
 		self:ListMaps(searchBar:GetValue())
 	end
 
-	self.FilteshowOnlyNotEchoed = vgui.Create("DCheckBoxLabel", mapMenu)
+	self.FilteshowOnlyNotEchoed = vgui.Create("DCheckBoxLabel", self)
 	self.FilteshowOnlyNotEchoed:SetText("Show only not echoed on")
 	self.FilteshowOnlyNotEchoed:SetPos(10, 30)
 	self.FilteshowOnlyNotEchoed:SetValue(0)
@@ -97,7 +97,7 @@ function PANEL:Init()
 		self:ListMaps(searchBar:GetValue())
 	end
 
-	self.SortByPersonalEchoes = vgui.Create("DCheckBoxLabel", mapMenu)
+	self.SortByPersonalEchoes = vgui.Create("DCheckBoxLabel", self)
 	self.SortByPersonalEchoes:SetText("Sort by my echo count")
 	self.SortByPersonalEchoes:SetPos(10, 50)
 	self.SortByPersonalEchoes:SetValue(0)
@@ -105,24 +105,43 @@ function PANEL:Init()
 		self:ListMaps(searchBar:GetValue())
 	end
 
-	self.FilterInstalledOnly = vgui.Create("DCheckBoxLabel", mapMenu)
+	self.FilterInstalledOnly = vgui.Create("DCheckBoxLabel", self)
 	self.FilterInstalledOnly:SetText("Installed Only")
-	self.FilterInstalledOnly:SetPos(750, 10)
+	self.FilterInstalledOnly:SizeToContents()
+	self.FilterInstalledOnly:SetPos(self:GetWide() - self.FilterInstalledOnly:GetWide() - 10, 10)
 	self.FilterInstalledOnly:SetValue(0)
 	self.FilterInstalledOnly.OnChange = function()
 		if self.FilterInstalledOnly:GetChecked() then
 			self.FilterUninstalledOnly:SetValue(0)
+			self.FilterShowLocal:SetValue(0)
 		end
 		self:ListMaps(searchBar:GetValue())
 	end
 
-	self.FilterUninstalledOnly = vgui.Create("DCheckBoxLabel", mapMenu)
+	self.FilterUninstalledOnly = vgui.Create("DCheckBoxLabel", self)
 	self.FilterUninstalledOnly:SetText("Uninstalled Only")
-	self.FilterUninstalledOnly:SetPos(750, 30)
+	self.FilterUninstalledOnly:SizeToContents()
+	self.FilterUninstalledOnly:SetPos(self:GetWide() - self.FilterUninstalledOnly:GetWide() - 10, 30)
 	self.FilterUninstalledOnly:SetValue(0)
 	self.FilterUninstalledOnly.OnChange = function()
 		if self.FilterUninstalledOnly:GetChecked() then
 			self.FilterInstalledOnly:SetValue(0)
+			self.FilterShowLocal:SetValue(0)
+		end
+		self:ListMaps(searchBar:GetValue())
+	end
+
+	self.FilterShowLocal = vgui.Create("DCheckBoxLabel", self)
+	self.FilterShowLocal:SetText("Show local")
+	self.FilterShowLocal:SizeToContents()
+	self.FilterShowLocal:SetPos(self:GetWide() - self.FilterShowLocal:GetWide() - 10, 50)
+	self.FilterShowLocal:SetValue(0)
+	self.FilterShowLocal.OnChange = function()
+		if self.FilterShowLocal:GetChecked() then
+			self.FilterInstalledOnly:SetValue(0)
+			self.FilterUninstalledOnly:SetValue(0)
+			self.FilterShowOnlyEchoed:SetValue(0)
+			self.FilteshowOnlyNotEchoed:SetValue(0)
 		end
 		self:ListMaps(searchBar:GetValue())
 	end
@@ -167,19 +186,28 @@ function PANEL:ListMaps(filter)
 	local showInstalled = self.FilterInstalledOnly and self.FilterInstalledOnly:GetChecked()
 	local showUninstalled = self.FilterUninstalledOnly and self.FilterUninstalledOnly:GetChecked()
 	local sortByPersonalEchoes = self.SortByPersonalEchoes and self.SortByPersonalEchoes:GetChecked()
+	local showLocal = self.FilterShowLocal and self.FilterShowLocal:GetChecked()
 
 	local mapPairs
-	if sortByPersonalEchoes then
-		local t = {}
-		for name, amount in pairs(mapList) do
-			t[#t+1] = {name=name, amount=amount, personal=EchoesOnMaps and EchoesOnMaps[name] or 0}
-		end
-		table.SortByMember(t, "personal", false)
-		mapPairs = t
-	else
+	if (showLocal) then
 		mapPairs = {}
-		for name, amount in SortedPairsByValue(mapList, true) do
-			mapPairs[#mapPairs+1] = {name=name, amount=amount}
+		for name, _ in pairs(self.installedMaps) do
+			mapPairs[#mapPairs+1] = {name=name, amount=mapList[name] or 0}
+		end
+		table.sort(mapPairs, function(a, b) return a.name:lower() < b.name:lower() end)
+	else
+		if sortByPersonalEchoes then
+			local t = {}
+			for name, amount in pairs(mapList) do
+				t[#t+1] = {name=name, amount=amount, personal=EchoesOnMaps and EchoesOnMaps[name] or 0}
+			end
+			table.SortByMember(t, "personal", false)
+			mapPairs = t
+		else
+			mapPairs = {}
+			for name, amount in SortedPairsByValue(mapList, true) do
+				mapPairs[#mapPairs+1] = {name=name, amount=amount}
+			end
 		end
 	end
 
@@ -188,7 +216,7 @@ function PANEL:ListMaps(filter)
 		local amount = v.amount
 
 		if (filter and !name:lower():find(filter:lower())) then continue end
-		if (!filter and amount < 10) then continue end
+		if (not showLocal and not filter and amount < 10) then continue end
 
 		local echoed = EchoesOnMaps and EchoesOnMaps[name] and EchoesOnMaps[name] > 0
 		local notEchoed = not (EchoesOnMaps and EchoesOnMaps[name] and EchoesOnMaps[name] > 0)

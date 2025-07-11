@@ -176,6 +176,7 @@ local mapSkins = {
 	["gm_deltarune_card_castle"] = "UTDR",
 	["gm_deltarune"] = "UTDR",
 	["gm_finalcorridor"] = "UTDR",
+	["gm_greenroom"] = "UTDR",
 	["gm_voidplaces"] = "VoidPlaces",
 	["otherside"] = "VoidPlaces"
 }

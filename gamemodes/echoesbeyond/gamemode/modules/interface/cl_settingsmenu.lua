@@ -4,19 +4,16 @@ local vignette = Material("echoesbeyond/vignette.png", "smooth")
 local PANEL = {}
 local lastOpenedTab = 1
 
-local function CreateCheckbox(parent, text, convar, y)
-	local checkbox = vgui.Create("DCheckBoxLabel", parent)
-	checkbox:SetText(text)
-	checkbox:SetValue(convar:GetBool())
-	checkbox:SizeToContents()
-	checkbox:SetPos(50, y)
-	checkbox.OnChange = function(self, value)
-		convar:SetBool(value)
-	end
+local function CreateCheckbox(parent, text, convarName, y)
+    local checkbox = vgui.Create("DCheckBoxLabel", parent)
+    checkbox:SetText(text)
+    checkbox:SizeToContents()
+    checkbox:SetPos(50, y)
 
-	return y + 25
+    checkbox:SetConVar(convarName)
+
+    return y + 25
 end
-
 local function CreateSlider(parent, text, convar, min, max, decimals, y)
 	local slider = vgui.Create("DNumSlider", parent)
 	slider:SetText(text)
@@ -130,40 +127,41 @@ local totalTabsWidth = 0
 	do
 		local y = 20
 		local pnl = tabPanels[1]
-		y = CreateCheckbox(pnl, "Enable music", GetConVar("echoes_music"), y)
-		y = CreateCheckbox(pnl, "Show read Echoes", GetConVar("echoes_showread"), y)
-		y = CreateCheckbox(pnl, "Don't fade read echoes", GetConVar("echoes_disablereadsys"), y)
-		y = CreateCheckbox(pnl, "Show offensive Echoes", GetConVar("echoes_profanity"), y)
-		y = CreateCheckbox(pnl, "Flash game window when a new Echo is created", GetConVar("echoes_windowflash"), y)
+		y = CreateCheckbox(pnl, "Enable music", "echoes_music", y)
+		y = CreateCheckbox(pnl, "Show read Echoes", "echoes_showread", y)
+		y = CreateCheckbox(pnl, "Don't fade read echoes", "echoes_disablereadsys", y)
+		y = CreateCheckbox(pnl, "Show offensive Echoes", "echoes_profanity", y)
+		y = CreateCheckbox(pnl, "Flash game window when a new Echo is created", "echoes_windowflash", y)
 	end
 
 	do
 		local y = 20
 		local pnl = tabPanels[2]
-		y = CreateCheckbox(pnl, "Enable GabeN mode", GetConVar("echoes_gabenmode"), y)
-		y = CreateCheckbox(pnl, "Enable void Echoes", GetConVar("echoes_enablevoidechoes"), y)
-		y = CreateCheckbox(pnl, "Enable floating Echoes", GetConVar("echoes_enableairechoes"), y)
+		y = CreateCheckbox(pnl, "Enable GabeN mode", "echoes_gabenmode", y)
+		y = CreateCheckbox(pnl, "Enable void Echoes", "echoes_enablevoidechoes", y)
+		y = CreateCheckbox(pnl, "Enable floating Echoes", "echoes_enableairechoes", y)
 		y = CreateSlider(pnl, "Movement Speed", GetConVar("echoes_speed"), 1, 1000, 0, y)
 	end
 
 	do
 		local y = 20
 		local pnl = tabPanels[3]
-		y = CreateCheckbox(pnl, "Enable smooth view", GetConVar("echoes_smoothview"), y)
-		y = CreateCheckbox(pnl, "Enable dynamic lights", GetConVar("echoes_dlights"), y)
+		y = CreateCheckbox(pnl, "Enable smooth view", "echoes_smoothview", y)
+		y = CreateCheckbox(pnl, "Enable dynamic lights", "echoes_dlights", y)
 		y = y - 13
 		y = CreateSlider(pnl, "Dynamic lights Brightness", GetConVar("echoes_dlights_brightness"), 0.1, 3, 0, y)
 		y = y + 5
 		y = CreateSlider(pnl, "Render Distance", GetConVar("echoes_renderdist"), 10000, 100000000, 0, y)
 		y = y + 5
-		y = CreateCheckbox(pnl, "Hide author signatures", GetConVar("echoes_disablesigning"), y)
+		y = CreateCheckbox(pnl, "Hide author signatures", "echoes_disablesigning", y)
 	end
 
 	do
 		local y = 20
 		local pnl = tabPanels[4]
-		y = CreateCheckbox(pnl, "Bypass placement checks (void, ground, etc)", GetConVar("echoes_bypasschecks"), y)
-		y = CreateCheckbox(pnl, "Debug info", GetConVar("echoes_debuginfo"), y)
+		y = CreateCheckbox(pnl, "Inject Sandbox Functions (Spawnmenu, etc, Requires mapchange)", "echoes_allowsandbox", y)
+		y = CreateCheckbox(pnl, "Bypass placement checks (void, ground, etc)", "echoes_bypasschecks", y)
+		y = CreateCheckbox(pnl, "Debug info", "echoes_debuginfo", y)
 
 		local deleteAll = vgui.Create("DButton", pnl)
 		deleteAll:SetSize(pnl:GetWide() * 0.5, 30)
