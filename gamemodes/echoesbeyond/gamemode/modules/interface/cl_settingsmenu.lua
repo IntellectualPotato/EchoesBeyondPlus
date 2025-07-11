@@ -1,12 +1,11 @@
-
 -- The settings menu
 local vignette = Material("echoesbeyond/vignette.png", "smooth")
 
 local PANEL = {}
-local y = 100
+local lastOpenedTab = 1
 
-local function CreateCheckbox(text, convar)
-	local checkbox = vgui.Create("DCheckBoxLabel", settingsMenu)
+local function CreateCheckbox(parent, text, convar, y)
+	local checkbox = vgui.Create("DCheckBoxLabel", parent)
 	checkbox:SetText(text)
 	checkbox:SetValue(convar:GetBool())
 	checkbox:SizeToContents()
@@ -15,31 +14,29 @@ local function CreateCheckbox(text, convar)
 		convar:SetBool(value)
 	end
 
-	y = y + 25
+	return y + 25
 end
 
-local function CreateSlider(text, convar, min, max, decimals)
-	local slider = vgui.Create("DNumSlider", settingsMenu)
+local function CreateSlider(parent, text, convar, min, max, decimals, y)
+	local slider = vgui.Create("DNumSlider", parent)
 	slider:SetText(text)
 	slider:SetMin(min)
 	slider:SetMax(max)
 	slider:SetDecimals(decimals)
 	slider:SetValue(convar:GetInt())
-	slider:SetWide(settingsMenu:GetWide() - 100)
+	slider:SetWide(parent:GetWide() - 100)
 	slider:SetPos(50, y)
 	slider.OnValueChanged = function(self, value)
 		convar:SetInt(value)
 	end
 
-	y = y + 25
+	return y + 25
 end
 
 function PANEL:Init()
 	if (IsValid(settingsMenu)) then
 		settingsMenu:Remove()
 	end
-
-	y = 100
 
 	settingsMenu = self
 
@@ -65,91 +62,170 @@ function PANEL:Init()
 	subTitle:CenterHorizontal()
 	subTitle:SetY(55)
 
-	CreateCheckbox("Enable music", GetConVar("echoes_music"))
-	CreateCheckbox("Show offensive Echoes", GetConVar("echoes_profanity"))
-	CreateCheckbox("Enable smooth view", GetConVar("echoes_smoothview"))
-	CreateCheckbox("Show read Echoes", GetConVar("echoes_showread"))
-	CreateCheckbox("Enable dynamic lights", GetConVar("echoes_dlights"))
-	y = y - 13
-	CreateSlider("Dynamic lights Brightness", GetConVar("echoes_dlights_brightness"), 0.1, 3, 0)
-	y = y + 5
-	CreateCheckbox("Flash game window when a new Echo is created", GetConVar("echoes_windowflash"))
-	CreateCheckbox("Disable Echo 'read' system", GetConVar("echoes_disablereadsys"))
-	CreateCheckbox("Hide author signatures", GetConVar("echoes_disablesigning"))
-	CreateCheckbox("Enable GabeN mode", GetConVar("echoes_gabenmode"))
-	CreateCheckbox("Enable void Echoes", GetConVar("echoes_enablevoidechoes"))
-	CreateCheckbox("Enable floating Echoes", GetConVar("echoes_enableairechoes"))
+	local tabNames = {"General", "Gameplay", "Visual", "Advanced"}
+	local tabButtons = {}
+	local tabPanels = {}
+	local tabStartY = 90
+	local tabHeight = 30
+	local tabContentY = tabStartY + tabHeight
 
-	CreateSlider("Movement Speed", GetConVar("echoes_speed"), 1, 1000, 0)
-	CreateSlider("Render Distance", GetConVar("echoes_renderdist"), 10000, 100000000, 0)
-
-	local titleExtra = vgui.Create("DLabel", settingsMenu)
-	titleExtra:SetText("Settings (Extra)")
-	titleExtra:SetFont("DermaLarge")
-	titleExtra:SizeToContents()
-	titleExtra:CenterHorizontal()
-	titleExtra:SetY(450)
-	y = y + 70
-
-	CreateCheckbox("Bypass placement checks (void, ground, etc)", GetConVar("echoes_bypasschecks"))
-	CreateCheckbox("Debug info", GetConVar("echoes_debuginfo"))
-
-	local deleteAll = vgui.Create("DButton", self)
-	deleteAll:SetSize(self:GetWide() * 0.5, 30)
-	deleteAll:SetText("Delete all data")
-	deleteAll:SetFont("CreditsText")
-	deleteAll:SetColor(Color(175, 175, 175))
-	deleteAll:CenterHorizontal()
-	deleteAll:SetY(self:GetTall() - 50)
-	deleteAll.Paint = function(this, width, height)
-		surface.SetDrawColor(this:IsDown() and Color(100, 100, 100) or this:IsHovered() and Color(75, 75, 75) or Color(50, 50, 50))
-		surface.DrawRect(0, 0, width, height)
+	for i, name in ipairs(tabNames) do
+		local panel = vgui.Create("DPanel", self)
+		panel:SetPos(0, tabContentY)
+		panel:SetSize(self:GetWide(), self:GetTall() - tabContentY)
+		panel.Paint = function() end
+		tabPanels[i] = panel
 	end
-	deleteAll.DoClick = function()
-		EchoesConfirm("Delete all data", "This will delete all of your data from Echoes Beyond, including all Echoes. Are you sure?", function()
-			http.Fetch("https://resonance.flatgrass.net/nuke", function(body, _, _, code)
-				if (code != 200) then
-					if (code == 401) then
-						EchoNotify("Your authentication token has expired. Please log in again.")
 
-						authToken = nil
-					else
-						EchoNotify("RESONANCE ERROR: " .. string.sub(body, 1, -2))
+	local function SwitchToTab(index)
+		lastOpenedTab = index
+		for i, panel in ipairs(tabPanels) do
+			panel:SetVisible(i == index)
+		end
+		for i, button in ipairs(tabButtons) do
+			button.m_bActive = (i == index)
+		end
+	end
+
+local totalTabsWidth = 0
+	local buttonSpacing = 2
+	for i, name in ipairs(tabNames) do
+		local button = vgui.Create("DButton", self)
+		button:SetText(name)
+		button:SetFont("TargetID")
+		button:SizeToContentsX(15)
+		button:SetTall(tabHeight)
+		button.m_bActive = false
+
+		button.Paint = function(s, w, h)
+			if s.m_bActive then
+				surface.SetDrawColor(28, 40, 40)
+				surface.DrawRect(0, 0, w, h)
+			else
+				surface.SetDrawColor(s:IsDown() and Color(100, 100, 100) or s:IsHovered() and Color(75, 75, 75) or Color(50, 50, 50))
+				surface.DrawRect(0, 0, w, h)
+			end
+		end
+
+		button.DoClick = function()
+			SwitchToTab(i)
+			EchoSound("button_click")
+		end
+
+		tabButtons[i] = button
+		totalTabsWidth = totalTabsWidth + button:GetWide()
+	end
+
+	if #tabButtons > 1 then
+		totalTabsWidth = totalTabsWidth + (#tabButtons - 1) * buttonSpacing
+	end
+
+	-- Now, calculate the starting position and place the buttons
+	local currentX = (self:GetWide() - totalTabsWidth) / 2
+	for i, button in ipairs(tabButtons) do
+		button:SetPos(currentX, tabStartY)
+		currentX = currentX + button:GetWide() + buttonSpacing
+	end
+
+	do
+		local y = 20
+		local pnl = tabPanels[1]
+		y = CreateCheckbox(pnl, "Enable music", GetConVar("echoes_music"), y)
+		y = CreateCheckbox(pnl, "Show read Echoes", GetConVar("echoes_showread"), y)
+		y = CreateCheckbox(pnl, "Don't fade read echoes", GetConVar("echoes_disablereadsys"), y)
+		y = CreateCheckbox(pnl, "Show offensive Echoes", GetConVar("echoes_profanity"), y)
+		y = CreateCheckbox(pnl, "Flash game window when a new Echo is created", GetConVar("echoes_windowflash"), y)
+	end
+
+	do
+		local y = 20
+		local pnl = tabPanels[2]
+		y = CreateCheckbox(pnl, "Enable GabeN mode", GetConVar("echoes_gabenmode"), y)
+		y = CreateCheckbox(pnl, "Enable void Echoes", GetConVar("echoes_enablevoidechoes"), y)
+		y = CreateCheckbox(pnl, "Enable floating Echoes", GetConVar("echoes_enableairechoes"), y)
+		y = CreateSlider(pnl, "Movement Speed", GetConVar("echoes_speed"), 1, 1000, 0, y)
+	end
+
+	do
+		local y = 20
+		local pnl = tabPanels[3]
+		y = CreateCheckbox(pnl, "Enable smooth view", GetConVar("echoes_smoothview"), y)
+		y = CreateCheckbox(pnl, "Enable dynamic lights", GetConVar("echoes_dlights"), y)
+		y = y - 13
+		y = CreateSlider(pnl, "Dynamic lights Brightness", GetConVar("echoes_dlights_brightness"), 0.1, 3, 0, y)
+		y = y + 5
+		y = CreateSlider(pnl, "Render Distance", GetConVar("echoes_renderdist"), 10000, 100000000, 0, y)
+		y = y + 5
+		y = CreateCheckbox(pnl, "Hide author signatures", GetConVar("echoes_disablesigning"), y)
+	end
+
+	do
+		local y = 20
+		local pnl = tabPanels[4]
+		y = CreateCheckbox(pnl, "Bypass placement checks (void, ground, etc)", GetConVar("echoes_bypasschecks"), y)
+		y = CreateCheckbox(pnl, "Debug info", GetConVar("echoes_debuginfo"), y)
+
+		local deleteAll = vgui.Create("DButton", pnl)
+		deleteAll:SetSize(pnl:GetWide() * 0.5, 30)
+		deleteAll:SetText("Delete all data")
+		deleteAll:SetFont("CreditsText")
+		deleteAll:SetColor(Color(175, 175, 175))
+		deleteAll:CenterHorizontal()
+		deleteAll:SetY(pnl:GetTall() - 50)
+		deleteAll.Paint = function(this, width, height)
+			surface.SetDrawColor(this:IsDown() and Color(100, 100, 100) or this:IsHovered() and Color(75, 75, 75) or Color(50, 50, 50))
+			surface.DrawRect(0, 0, width, height)
+		end
+		deleteAll.DoClick = function()
+			EchoesConfirm("Delete all data", "This will delete all of your data from Echoes Beyond, including all Echoes. Are you sure?", function()
+				http.Fetch("https://resonance.flatgrass.net/nuke", function(body, _, _, code)
+					if (code != 200) then
+						if (code == 401) then
+							EchoNotify("Your authentication token has expired. Please log in again.")
+
+							authToken = nil
+						else
+							EchoNotify("RESONANCE ERROR: " .. string.sub(body, 1, -2))
+						end
+
+						return
 					end
 
-					return
-				end
+					mainMenu:Close()
 
-				mainMenu:Close()
+					file.Delete("echoesbeyond/readechoes.txt")
+					file.Delete("echoesbeyond/authtoken.txt")
+					authToken = nil
+					writtenEchoes = {}
+					readEchoCount = 0
 
-				file.Delete("echoesbeyond/readechoes.txt")
-				file.Delete("echoesbeyond/authtoken.txt")
-				authToken = nil
-				writtenEchoes = {}
-				readEchoCount = 0
+					local newEchoes = {}
 
-				local newEchoes = {}
+					for i = 1, #echoes do
+						local echo = echoes[i]
+						if (echo.isOwner) then continue end
 
-				for i = 1, #echoes do
-					local echo = echoes[i]
-					if (echo.isOwner) then continue end
+						newEchoes[#newEchoes + 1] = echo
+					end
 
-					newEchoes[#newEchoes + 1] = echo
-				end
+					echoes = newEchoes
 
-				echoes = newEchoes
+					EchoNotify("All data has been deleted.")
 
-				EchoNotify("All data has been deleted.")
+					EchoSound("button_click")
+				end, function(error)
+					EchoNotify(error)
+				end, {authorization = authToken})
+			end)
 
-				EchoSound("button_click")
-			end, function(error)
-				EchoNotify(error)
-			end, {authorization = authToken})
-		end)
-
-		EchoSound("button_click")
+			EchoSound("button_click")
+		end
 	end
+
+	SwitchToTab(lastOpenedTab)
 end
+
+local notif = Material("echoesbeyond/notification.png")
 
 function PANEL:Paint(width, height)
 	surface.SetDrawColor(25, 25, 25)
@@ -157,6 +233,10 @@ function PANEL:Paint(width, height)
 
 	surface.SetMaterial(vignette)
 	surface.DrawTexturedRect(0, 0, width, height)
+
+	surface.SetDrawColor(81, 81, 81)
+	surface.SetMaterial(notif)
+	surface.DrawTexturedRect((width - width * 0.85) / 2, 85, width * 0.85, 40)
 end
 
 function PANEL:OnKeyCodePressed(key)
