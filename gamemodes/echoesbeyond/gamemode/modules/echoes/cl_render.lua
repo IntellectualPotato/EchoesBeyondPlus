@@ -380,6 +380,14 @@ local lastPartyModeTime = 0
 hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDepth, bDrawingSkybox)
 	if (bDrawingDepth or bDrawingSkybox) then return end
 
+	local profanity = GetConVar("echoes_profanity"):GetBool()
+	local showRead = GetConVar("echoes_showread"):GetBool()
+	local disableReadSys = GetConVar("echoes_disablereadsys"):GetBool()
+	local showDlights = GetConVar("echoes_dlights"):GetBool()
+	local DlightBright = GetConVar("echoes_dlights_brightness"):GetInt()
+	local enableAir = GetConVar("echoes_enableairechoes"):GetBool()
+	local debugInfo = GetConVar("echoes_debuginfo"):GetBool()
+
 	local org, ang = EyePos(), EyeAngles()
 	local fwd = ang:Forward()
 	local d = cameraData
@@ -390,13 +398,7 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 	local clientPos = client:GetShootPos()
 	local frameTime = FrameTime()
 	local curTime = CurTime()
-	local profanity = GetConVar("echoes_profanity"):GetBool()
-	local showRead = GetConVar("echoes_showread"):GetBool()
-	local disableReadSys = GetConVar("echoes_disablereadsys"):GetBool()
 	local curTimeSpeed = curTime * 1.5
-	local showDlights = GetConVar("echoes_dlights"):GetBool()
-	local DlightBright = GetConVar("echoes_dlights_brightness"):GetInt()
-	local enableAir = GetConVar("echoes_enableairechoes"):GetBool()
 	local drawColor = Color(0, 0, 0)
 
 	echoToGroundFrac = Lerp(frameTime * 2, echoToGroundFrac, enableAir and 0 or 1)
@@ -467,7 +469,7 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 		local active = echo.active
 		local explicit = echo.explicit
 		local skin = getSkin(echo)
-		local font = (skin and skin.font) or "TargetID" -- Get the font for this skin
+		local font = (skin and skin.font) or "TargetID"
 
 		if (skin.point) then
 			render.PushFilterMag(TEXFILTER.POINT)
@@ -477,39 +479,40 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 			render.PushFilterMin(TEXFILTER.ANISOTROPIC)
 		end
 
+		if not echo.color then
+			if explicit then
+				echo.color = Color(255, 50, 50)
+				echo.light_color = Color(255, 25, 25)
+			else
+				echo.color = skin.color or Color(150, 255, 255)
+				echo.light_color = skin.color_light or echo.color
+			end
+		end
+
 		local r, g, b
 		local rDraw, gDraw, bDraw
 
 		if (not read and not loading) then
-			if (special) then
-				r, g, b = 255, 255 * active, 255
-				rDraw, bDraw = 200 + 55 * active, 200 + 55 * active
-				gDraw = 255 * active
-			elseif (explicit) then
-				r, g, b = 255, 25 + 230 * active, 25 + 230 * active
-				rDraw = 255
-				gDraw, bDraw = 50 + 205 * active, 50 + 205 * active
-			elseif (bOwner) then
-				r, g, b = 255, 255, 255 * active
-				rDraw, gDraw = 255, 255
-				bDraw = 255 * active
-			else
-				local baseDrawColor = skin.color or Color(150, 255, 255)
-				local baseDrawColor_light = skin.color_light or baseDrawColor
-				local baseDlightColor = Color(math.max(0, baseDrawColor_light.r - 50), baseDrawColor_light.g, baseDrawColor_light.b)
-
-				r = Lerp(active, baseDlightColor.r, 255)
-				g = Lerp(active, baseDlightColor.g, 255)
-				b = Lerp(active, baseDlightColor.b, 255)
-
-				rDraw = Lerp(active, baseDrawColor.r, 255)
-				gDraw = Lerp(active, baseDrawColor.g, 255)
-				bDraw = Lerp(active, baseDrawColor.b, 255)
+			local baseDrawColor = echo.color
+			local baseLightColor = echo.light_color
+			
+			if not bOwner and not special then
+				 baseLightColor = Color(math.max(0, baseLightColor.r - 50), baseLightColor.g, baseLightColor.b)
 			end
+
+			-- Unified color animation logic, lerping from base color to white
+			r = Lerp(active, baseLightColor.r, 255)
+			g = Lerp(active, baseLightColor.g, 255)
+			b = Lerp(active, baseLightColor.b, 255)
+
+			rDraw = Lerp(active, baseDrawColor.r, 255)
+			gDraw = Lerp(active, baseDrawColor.g, 255)
+			bDraw = Lerp(active, baseDrawColor.b, 255)
 		else
+			-- Read/loading color remains the same
 			r, g, b = 25 + 230 * active, 25 + 230 * active, 25 + 230 * active
 			rDraw, gDraw, bDraw = 100 + 155 * active, 100 + 155 * active, 100 + 155 * active
-		end
+		end	
 
 		if (echoDistSqr <= lightRenderDist and showDlights and i >= (echoCount - (32 - dLightCount))) then
 			local dLight = DynamicLight(echo.id)
@@ -527,11 +530,11 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 
 		drawColor:SetUnpacked(rDraw, gDraw, bDraw, alpha)
 
-ComputeEchoMtx(echo_mtx, echo.drawPos, echo._angle, 0.1)
+		ComputeEchoMtx(echo_mtx, echo.drawPos, echo._angle, 0.1)
 		cam.PushModelMatrix(echo_mtx, true)
 		
 		local finalColor = partyMode and echo.partyColor or drawColor
-		
+
 		--logic for skins with a custom read texture
 		if (skin.mat_read) then
 			echo.readTransition = echo.readTransition or (read and 1 or 0)
@@ -559,7 +562,7 @@ ComputeEchoMtx(echo_mtx, echo.drawPos, echo._angle, 0.1)
 				surface.DrawTexturedRect(-96, -96, 192, 192)
 			end
 		
-		--Default behaviour
+			--Default behaviour
 		else
 			surface.SetDrawColor(finalColor)
 			surface.SetMaterial((loading or active > 0) and skin.mat2 or skin.mat1)
@@ -580,7 +583,7 @@ ComputeEchoMtx(echo_mtx, echo.drawPos, echo._angle, 0.1)
 				draw.SimpleText(echo.cachedText[j], font, 0, -(151 + j * 15), Color(255, 255, 255, math.min(active * 255, alpha)), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 			end
 
-			if GetConVar("echoes_debuginfo"):GetBool() then
+			if debugInfo then
 				IDsort()
 				local seq = idToSequential[echo.id] or -1
 
@@ -611,7 +614,6 @@ ComputeEchoMtx(echo_mtx, echo.drawPos, echo._angle, 0.1)
 
 			cam.IgnoreZ(false)
 		end
-
 
 		cam.PopModelMatrix()
 

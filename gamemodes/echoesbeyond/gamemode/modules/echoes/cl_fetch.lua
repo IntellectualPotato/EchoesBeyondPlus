@@ -1,3 +1,54 @@
+function InitPartyMode(msg, milestone)
+	EchoNotify(msg)
+
+	timer.Simple(3, function()
+		partyMode = true
+
+		StopMusic()
+		timer.Remove("echoesMusic")
+
+		if milestone then
+			timer.Simple(20, function()
+				EchoNotify("Thank you all for your continued support!")
+			end)
+
+			timer.Simple(40, function()
+				EchoNotify("Click the 'End Party Mode' button in the main menu to stop at any time.")
+
+				endPartyEnabled = true
+			end)
+		else
+			endPartyEnabled = true
+		end
+
+		LocalPlayer():EmitSound("echoesbeyond/music/km_who_likes_to_party.mp3")
+
+		timer.Create("echoesPartyColor", 0, 0, function()
+			timer.Adjust("echoesPartyColor", 0.5)
+
+			for i = 1, #echoes do
+				local echo = echoes[i]
+				echo.partyColor = Color(math.random(255), math.random(255), math.random(255))
+				echo.partyOffset = Vector(math.random(-20, 20), math.random(-20, 20), math.random(-20, 20))
+			end
+
+			vignetteColor = Color(math.random(255), math.random(255), math.random(255))
+		end)
+
+		timer.Create("echoesParty", 255, 1, function() -- Duration of the party music
+			partyMode = false
+			timer.Remove("echoesPartyColor")
+			LocalPlayer():StopSound("echoesbeyond/music/km_who_likes_to_party.mp3")
+			vignetteColor = color_black
+			endPartyEnabled = false
+
+			if (!GetConVar("echoes_music"):GetBool()) then return end
+
+			PlayMusic()
+		end)
+	end)
+end
+
 
 -- Fetch echoes and send them to the client
 CreateClientConVar("echoes_windowflash", "1")
@@ -94,7 +145,7 @@ function FetchEchoes()
 			local isSpecial = string.StartsWith(text, "!&") and newEcho.admin
 			local text = isSpecial and string.sub(text, string.StartsWith(text, "!& ") and 4 or 3) or text
 
-			echoes[#echoes + 1] = {
+			local newEchoTable = {
 				explicit = IsOffensive(text),
 				angle = Angle(0, 0, 90),
 				readTime = read and 0,
@@ -110,6 +161,17 @@ function FetchEchoes()
 				init = 0,
 				skin = "default"
 			}
+
+			if isSpecial then
+				newEchoTable.color = Color(200, 0, 200)
+				newEchoTable.light_color = Color(255, 0, 255)
+			elseif isOwner then
+				newEchoTable.color = Color(255, 255, 0)
+				newEchoTable.light_color = Color(255, 255, 0)
+			end
+
+			echoes[#echoes + 1] = newEchoTable
+
 		end
 
 		ValidateEchoes(newEchoes)
@@ -182,50 +244,7 @@ function FetchStats()
 			local newCount = math.floor(data.note_count / 1000) * 1000
 
 			if (newCount > previousCount) then
-				EchoNotify("A new milestone has been reached! " .. newCount .. " Echoes have been written! Engage party mode!")
-
-				timer.Simple(3, function()
-					partyMode = true
-
-					StopMusic()
-					timer.Remove("echoesMusic")
-
-					timer.Simple(20, function()
-						EchoNotify("Thank you all for your continued support!")
-					end)
-
-					timer.Simple(40, function()
-						EchoNotify("Click the 'End Party Mode' button in the main menu to stop at any time.")
-
-						endPartyEnabled = true
-					end)
-
-					LocalPlayer():EmitSound("echoesbeyond/music/km_who_likes_to_party.mp3")
-
-					timer.Create("echoesPartyColor", 0, 0, function()
-						timer.Adjust("echoesPartyColor", 0.5)
-
-						for i = 1, #echoes do
-							local echo = echoes[i]
-							echo.partyColor = Color(math.random(255), math.random(255), math.random(255))
-							echo.partyOffset = Vector(math.random(-20, 20), math.random(-20, 20), math.random(-20, 20))
-						end
-
-						vignetteColor = Color(math.random(255), math.random(255), math.random(255))
-					end)
-
-					timer.Create("echoesParty", 255, 1, function() -- Duration of the party music
-						partyMode = false
-						timer.Remove("echoesPartyColor")
-						LocalPlayer():StopSound("echoesbeyond/music/km_who_likes_to_party.mp3")
-						vignetteColor = color_black
-						endPartyEnabled = false
-
-						if (!GetConVar("echoes_music"):GetBool()) then return end
-
-						PlayMusic()
-					end)
-				end)
+				InitPartyMode("A new milestone has been reached! " .. newCount .. " Echoes have been written! Engage party mode!", true)
 			end
 		end
 

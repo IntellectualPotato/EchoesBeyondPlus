@@ -220,6 +220,22 @@ local totalTabsWidth = 0
 
 			EchoSound("button_click")
 		end
+
+		local ForceParty = vgui.Create("DButton", pnl)
+		ForceParty:SetSize(pnl:GetWide() * 0.5, 30)
+		ForceParty:SetText("Force party mode")
+		ForceParty:SetFont("CreditsText")
+		ForceParty:SetColor(Color(175, 175, 175))
+		ForceParty:CenterHorizontal()
+		ForceParty:SetY(pnl:GetTall() - 100)
+		ForceParty.Paint = function(this, width, height)
+			surface.SetDrawColor(this:IsDown() and Color(100, 100, 100) or this:IsHovered() and Color(75, 75, 75) or Color(50, 50, 50))
+			surface.DrawRect(0, 0, width, height)
+		end
+		ForceParty.DoClick = function()
+			InitPartyMode("Engage party mode!")
+		end
+
 	end
 
 	SwitchToTab(lastOpenedTab)
@@ -234,7 +250,7 @@ function PANEL:Paint(width, height)
 	surface.SetMaterial(vignette)
 	surface.DrawTexturedRect(0, 0, width, height)
 
-	surface.SetDrawColor(81, 81, 81)
+	surface.SetDrawColor(45, 45, 45)
 	surface.SetMaterial(notif)
 	surface.DrawTexturedRect((width - width * 0.85) / 2, 85, width * 0.85, 40)
 end
