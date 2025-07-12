@@ -5,6 +5,7 @@ local reportMat = Material("echoesbeyond/report.png", "smooth")
 local vignette = Material("echoesbeyond/vignette.png", "smooth")
 local creditsMat = Material("echoesbeyond/credits.png", "smooth")
 local changelogMat = Material("echoesbeyond/changelog.png", "smooth")
+local pinsMat = Material("echoesbeyond/pins.png", "smooth")
 local plusMat = Material("echoesbeyond/echo_plus.png", "smooth")
 
 surface.CreateFont( "Echoes_statsfont", {
@@ -79,6 +80,7 @@ function PANEL:Init()
 	mapOption.DoClick = function()
 		EchoSound("button_click")
 
+		if (IsValid(pinnedEchoesMenu)) then pinnedEchoesMenu:Close(true) end
 		if (IsValid(personalEchoesMenu)) then personalEchoesMenu:Close(true) end
 
 		if (IsValid(mapMenu)) then
@@ -100,6 +102,7 @@ function PANEL:Init()
 	personalEchoes.DoClick = function()
 		EchoSound("button_click")
 
+		if (IsValid(pinnedEchoesMenu)) then pinnedEchoesMenu:Close(true) end
 		if (IsValid(mapMenu)) then mapMenu:Close(true) end
 
 		if (IsValid(personalEchoesMenu)) then
@@ -109,9 +112,31 @@ function PANEL:Init()
 		end
 	end
 
+	local pinnedEchoesButton = vgui.Create("DButton", self)
+    pinnedEchoesButton:SetSize(48, 48)
+    pinnedEchoesButton:SetPos(10, personalEchoes:GetY() + personalEchoes:GetTall() + 10) 
+    pinnedEchoesButton:SetText("")
+    pinnedEchoesButton.Paint = function(self, width, height)
+        surface.SetDrawColor(self:IsDown() and Color(100, 100, 100) or self:IsHovered() and Color(75, 75, 75) or Color(50, 50, 50))
+        surface.SetMaterial(pinsMat)
+        surface.DrawTexturedRect(0, 0, width, height)
+    end
+    pinnedEchoesButton.DoClick = function()
+        EchoSound("button_click")
+
+        if (IsValid(mapMenu)) then mapMenu:Close(true) end
+        if (IsValid(personalEchoesMenu)) then personalEchoesMenu:Close(true) end
+
+        if (IsValid(pinnedEchoesMenu)) then
+            pinnedEchoesMenu:Close()
+        else
+            vgui.Create("echoPinnedEchoesMenu")
+        end
+    end
+
 	local allEchoes = vgui.Create("DButton", self)
 	allEchoes:SetSize(48, 48)
-	allEchoes:SetPos(10, 48 + 80)
+	allEchoes:SetPos(10, pinnedEchoesButton:GetY() + pinnedEchoesButton:GetTall() + 10)
 	allEchoes:SetText("")
 	allEchoes.Paint = function(self, width, height)
 		surface.SetDrawColor(self:IsDown() and Color(100, 100, 100) or self:IsHovered() and Color(75, 75, 75) or Color(50, 50, 50))
@@ -123,7 +148,7 @@ function PANEL:Init()
 		if (IsValid(mainMenu)) then mainMenu:Close(true) end
 		LocalPlayer():ConCommand("echoes_menu")
 	end
-
+	
 	local settingsOption = vgui.Create("DButton", self)
 	settingsOption:SetSize(48, 48)
 	settingsOption:SetPos(self:GetWide() - 48 - 10, 10)
@@ -421,6 +446,10 @@ function PANEL:Close()
 	if (IsValid(personalEchoesMenu)) then
 		personalEchoesMenu:Close(true)
 	end
+
+	if (IsValid(pinnedEchoesMenu)) then
+        pinnedEchoesMenu:Close(true)
+    end
 
 	EchoSound("whoosh", 90, 0.75)
 

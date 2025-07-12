@@ -60,6 +60,7 @@ local echoBlankMat = Material("echoesbeyond/echo_blank.png", "mips")
 local echoDotsMat = Material("echoesbeyond/echo_dots.png", "mips")
 local echoDotSingleMat = Material("echoesbeyond/echo_dot_single.png", "mips")
 local empty = Material("echoesbeyond/nothing.png", "mips")
+local echoPinMat = Material("echoesbeyond/echo_pin.png", "mips")
 local lightRenderDist = 3000000 -- How far the dynamic light should render
 local activationDist = 6500 -- How close the player should be to activate the echo
 local echoFadeDist = 2500 -- How far the echo should start fading
@@ -183,7 +184,8 @@ local mapSkins = {
 
 local mapPrefixSkins = {
 	["tbg_"] = "tbg",
-	["vp_"] = "VoidPlaces"
+	["vp_"] = "VoidPlaces",
+	["vpc_"] = "VoidPlaces"
 }
 
 local function DetermineDefaultSkin()
@@ -576,6 +578,22 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 			surface.DrawTexturedRectRotated(0, 0, 192, 192, curTime * -350)
 		end
 
+		  if echo.pinned then
+            local pinSpawnTime = echo.pinTime or (echo.creationTime or 0)
+            local timeSincePin = CurTime() - pinSpawnTime
+            local fadeDuration = 0.7 --quick fade
+            local pinAlpha = math.min(timeSincePin / fadeDuration, 1)
+
+            --use echo's color for the pin
+            local pinColor = finalColor
+            surface.SetDrawColor(pinColor.r, pinColor.g, pinColor.b, pinColor.a * pinAlpha)
+            surface.SetMaterial(echoPinMat)
+            
+            local iconSize = 96
+            surface.DrawTexturedRect(96 - iconSize, 96 - iconSize - 10, iconSize, iconSize)
+			surface.SetDrawColor(finalColor)
+        end
+
 		if (alpha ~= 0 and active ~= 0) then
 			cam.IgnoreZ(true)
 
@@ -649,4 +667,40 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 		render.PopFilterMag()
 		render.PopFilterMin()
 	end
+end)
+
+local was_e_key_pressed = false
+hook.Add("Think", "Echoes_thinkloop", function()
+	local ply = LocalPlayer()
+	if not IsValid(ply) then return end
+
+	--get current key states
+	local is_alt_down = input.IsKeyDown(KEY_LALT) or input.IsKeyDown(KEY_RALT)
+	local is_e_down = input.IsKeyDown(KEY_E)
+
+	--if alt held, check for a single E press
+	if is_e_down and not was_e_key_pressed and is_alt_down then
+		local plyPos = ply:GetShootPos()
+		local closestEcho = nil
+		local activationDistSqr = activationDist * activationDist
+		local minDistSqr = activationDistSqr
+
+		-- Loop through all echoes
+		for i = 1, #echoes do
+			local echo = echoes[i]
+
+			local distSqr = plyPos:DistToSqr(echo.pos)
+
+			if distSqr < minDistSqr and echo.active == 1 then
+				minDistSqr = distSqr
+				closestEcho = echo
+			end
+		end
+
+		if closestEcho then
+			TogglePin(closestEcho)
+		end
+	end
+
+	was_e_key_pressed = is_e_down
 end)

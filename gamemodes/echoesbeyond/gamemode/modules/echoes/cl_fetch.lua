@@ -66,6 +66,15 @@ nextEcho = nextEcho or 0 -- Time a new echo can be made
 mapList = mapList or {} -- List of maps with echoes
 echoes = echoes or {} -- Echoes on the map
 
+function SyncPinnedStatus()
+    for _, echo in ipairs(echoes) do
+        echo.pinned = false
+        if IsEchoPinned(echo.id) then
+            echo.pinned = true
+        end
+    end
+end
+
 function FetchEchoes()
 	local map = game.GetMap()
 
@@ -188,6 +197,7 @@ function FetchEchoes()
 				break
 			end
 		end
+		SyncPinnedStatus()
 		IDsort()
 	end, function(error)
 		EchoNotify(error)
@@ -287,6 +297,7 @@ hook.Add("InitPostEntity", "echoes_fetch_InitPostEntity", function()
 	authToken = file.Read("echoesbeyond/authtoken.txt", "DATA")
 	authToken = authToken and string.find(authToken, "\n", 1, true) and string.Explode("\n", authToken)[2]
 
+	LoadPinnedEchoes()
 	FetchOwnEchoes()
 	FetchInfo()
 
