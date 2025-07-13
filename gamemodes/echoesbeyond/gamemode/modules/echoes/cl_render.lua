@@ -165,6 +165,13 @@ local skins = {
 		color_light = Color(255, 95, 255),
 		font = "vp_font"
     },
+	["Apocalypse"] = {
+        mat1 = Material("echoesbeyond/Skins/apocecho.png", "mips"),
+        mat2 = Material("echoesbeyond/Skins/apocecho_blank.png", "mips"),
+        dotmat = Material("echoesbeyond/Skins/apocecho_dot.png"),
+        color = Color(220, 255, 230),
+		--color_light = Color(255, 95, 255),
+    },
 }
 
 local function getSkin(echo)
@@ -179,7 +186,9 @@ local mapSkins = {
 	["gm_finalcorridor"] = "UTDR",
 	["gm_greenroom"] = "UTDR",
 	["gm_voidplaces"] = "VoidPlaces",
-	["otherside"] = "VoidPlaces"
+	["otherside"] = "VoidPlaces",
+	["rp_asheville"] = "Apocalypse",
+	["gm_city_of_silence"] = "Apocalypse"
 }
 
 local mapPrefixSkins = {
