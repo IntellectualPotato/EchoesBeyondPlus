@@ -2,7 +2,7 @@
 "echoesbeyond"
 {
 	"base"		""
-	"title"		"Echoes Beyond"
+	"title"		"Echoes Beyond Plus"
 	"category"	"other"
 	"menusystem"	"1"
 }

@@ -56,7 +56,7 @@ function StopMusic()
 		currentSong:Stop()
 	end
 
-	timer.Remove("echoes_music")
+	timer.Remove("echoesMusic")
 end
 
 hook.Add("InitPostEntity", "music_InitPostEntity", function()
