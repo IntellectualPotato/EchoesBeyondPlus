@@ -2,15 +2,18 @@
 A modification/fork of the echoes beyond garry's mod gamemode, just random changes that i put
 Includes:
 * Skin system that gives a few maps and the first echo on the map a unique skin
-* Echoes follow the cameras height to help with vents being annoying
+* "Pin" echo system to pin echoes you want to remember, along with a translate feature
 * A couple extra settings
 * Map list filters (installed, uninstalled, echoed on/not echoed)
 * Map list shows your personal echoes next to the global echoes count
 * More verbose info in the tab menu
+* Echoes follow the cameras height to help with vents being annoying
 * Couple extra QOL things (will expand)
 
 i am unsure if i will add too much here, but its here!
 I do not have access to the serverside/backend of EchoesBeyond, This version does not ping the servers any more than the normal mod, for this reason i cannot add things such as timestamps to the echoes
+
+alt + e while reading an echo to open the pin/translate options, you have to hold alt and tap e, releasing alt does the selected option
 
 # WARNING
 recommended to make a backup of your readechoes.txt in your garrysmod/data/echoesbeyond folder, as this version will convert it to a new format that does not work and breaks the original mod.
