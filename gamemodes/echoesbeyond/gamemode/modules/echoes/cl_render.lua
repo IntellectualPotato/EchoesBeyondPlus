@@ -61,6 +61,9 @@ local echoDotsMat = Material("echoesbeyond/echo_dots.png", "mips")
 local echoDotSingleMat = Material("echoesbeyond/echo_dot_single.png", "mips")
 local empty = Material("echoesbeyond/nothing.png", "mips")
 local echoPinMat = Material("echoesbeyond/echo_pin.png", "mips")
+local echoTranslateMat = Material("icon16/comments.png", "mips")
+local echoOptionMat = Material("echoesbeyond/echo_option.png", "mips")
+local echoArrowMat = Material("echoesbeyond/echo_arrow.png", "mips") -- Added Arrow Material
 local lightRenderDist = 3000000 -- How far the dynamic light should render
 local activationDist = 6500 -- How close the player should be to activate the echo
 local echoFadeDist = 2500 -- How far the echo should start fading
@@ -170,7 +173,6 @@ local skins = {
         mat2 = Material("echoesbeyond/Skins/apocecho_blank.png", "mips"),
         dotmat = Material("echoesbeyond/Skins/apocecho_dot.png"),
         color = Color(220, 255, 230),
-		--color_light = Color(255, 95, 255),
     },
 }
 
@@ -239,7 +241,7 @@ local function UpdateEchoTextCache(inEchoes)
 
 		-- If text is already cached with the correct font, skip it
 		if (echo.cachedText and echo.cachedFont == font) then continue end
-		echo.cachedFont = font -- Store which font was used for caching
+		echo.cachedFont = font
 
 		local text = echo.text
 		if (disableSigning) then text = RemoveSigning(text) end
@@ -248,7 +250,7 @@ local function UpdateEchoTextCache(inEchoes)
 		local lines = {}
 		local line = ""
 
-		surface.SetFont(font) -- Use the correct font for measuring text size
+		surface.SetFont(font)
 
 		for j = 1, #words do
 			local word = words[j]
@@ -387,7 +389,72 @@ local function ComputeEchoMtx(mtx, pos, rot, size, z_offset)
     0,0,0,1)
 end
 
+function TranslateEcho(echo)
+    if echo.isTranslating then return end
+
+    echo.isTranslating = true
+    echo.originalText = echo.originalText or echo.text
+    echo.cachedText = nil
+	echo.active = 0
+	echo.loading = true
+	EchoSound("echo_translate_fast", 70, 0.5)
+
+    local apiKey = "AIzaSyATBXajvzQLTDHEQbcpq0Ihe0vWDHmO520" --This is an official google api key, dw
+    local url = "https://translate-pa.googleapis.com/v1/translateHtml?key=" .. apiKey
+
+    local bodyTable = {
+        {
+            {echo.originalText},
+            "auto",
+            "en"
+        },
+        "wt_lib"
+    }
+
+    local request = {
+        method = "POST",
+        url = url,
+        headers = {
+            ["Content-Type"] = "application/json+protobuf",
+            ["X-Goog-API-Key"] = apiKey
+        },
+        body = util.TableToJSON(bodyTable),
+        
+        success = function(code, body, headers)
+            echo.isTranslating = false
+            if code == 200 then
+                local success, data = pcall(util.JSONToTable, body)
+                if success and data and data[1] and data[1][1] then
+                    echo.text = string.gsub(data[1][1], "&#(%d+);", function(n) return string.char(tonumber(n)) end)
+                else
+                    EchoNotify("Translation failed. (Invalid response)")
+                end
+            else
+                EchoNotify("Translation failed. (HTTP " .. tostring(code) .. ")")
+            end
+            echo.cachedText = nil
+			echo.loading = false
+			EchoSound("echo_translate_done", 120)
+        end,
+        
+        failed = function(error)
+            echo.isTranslating = false
+            EchoNotify("Translation failed. (" .. tostring(error) .. ")")
+            echo.cachedText = nil
+			echo.loading = false
+			EchoSound("echo_translate_done", 120)
+			echo.originalText = nil
+        end
+    }
+
+    HTTP(request)
+end
+
 local lastPartyModeTime = 0
+local isAltEMenuOpen = false
+local altEMenuTargetEcho = nil
+local altEMenuSelectedOption = 1
+local altEMenuFadeStartTime = 0
 
 hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDepth, bDrawingSkybox)
 	if (bDrawingDepth or bDrawingSkybox) then return end
@@ -483,6 +550,7 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 		local skin = getSkin(echo)
 		local font = (skin and skin.font) or "TargetID"
 
+		-- This is probably a janky way of doing it for pixel ones but lolol
 		if (skin.point) then
 			render.PushFilterMag(TEXFILTER.POINT)
 			render.PushFilterMin(TEXFILTER.POINT)
@@ -587,13 +655,13 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 			surface.DrawTexturedRectRotated(0, 0, 192, 192, curTime * -350)
 		end
 
-		  if echo.pinned then
+		if echo.pinned then
             local pinSpawnTime = echo.pinTime or (echo.creationTime or 0)
             local timeSincePin = CurTime() - pinSpawnTime
             local fadeDuration = 0.7 --quick fade
             local pinAlpha = math.min(timeSincePin / fadeDuration, 1)
 
-            --use echo's color for the pin
+			--use echo's color for the pin
             local pinColor = finalColor
             surface.SetDrawColor(pinColor.r, pinColor.g, pinColor.b, pinColor.a * pinAlpha)
             surface.SetMaterial(echoPinMat)
@@ -643,6 +711,65 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 			cam.IgnoreZ(false)
 		end
 
+		-- Alt + e menu, i half have no idea what im doing sue me please LOL
+        if isAltEMenuOpen and altEMenuTargetEcho == echo then
+            local fadeInDuration = 0.15
+            local timeSinceOpen = CurTime() - altEMenuFadeStartTime
+            local openAlpha = math.min(timeSinceOpen / fadeInDuration, 1)
+            
+            if openAlpha > 0 then
+                local menuAlpha = finalColor.a * openAlpha
+
+                local boxSize = 80
+                local boxPadding = 10
+                local totalWidth = (boxSize * 2) + boxPadding
+                local startX = -totalWidth / 2
+                local startY = 96 + 20
+                local trans_x = startX + boxSize + boxPadding
+
+                local target1 = (altEMenuSelectedOption == 1) and 1 or 0
+                local target2 = (altEMenuSelectedOption == 2) and 1 or 0
+                local colorLerpSpeed = 12
+                echo.selectionLerp1 = Lerp(frameTime * colorLerpSpeed, echo.selectionLerp1, target1)
+                echo.selectionLerp2 = Lerp(frameTime * colorLerpSpeed, echo.selectionLerp2, target2)
+
+                local deselectedColor = Color(150, 150, 150)
+                local selectedColor = echo.color
+                local color1 = Color(Lerp(echo.selectionLerp1, deselectedColor.r, selectedColor.r), Lerp(echo.selectionLerp1, deselectedColor.g, selectedColor.g), Lerp(echo.selectionLerp1, deselectedColor.b, selectedColor.b), menuAlpha)
+                local color2 = Color(Lerp(echo.selectionLerp2, deselectedColor.r, selectedColor.r), Lerp(echo.selectionLerp2, deselectedColor.g, selectedColor.g), Lerp(echo.selectionLerp2, deselectedColor.b, selectedColor.b), menuAlpha)
+
+                local targetArrowX = (altEMenuSelectedOption == 1) and (startX + boxSize/2) or (trans_x + boxSize/2)
+                local arrowLerpSpeed = 20
+                echo.arrowLerpX = Lerp(frameTime * arrowLerpSpeed, echo.arrowLerpX, targetArrowX)
+
+                local arrowSize = 32
+                local arrowY = startY - arrowSize/2 - 5
+                surface.SetMaterial(echoArrowMat)
+                surface.SetDrawColor(255, 255, 255, menuAlpha)
+                surface.DrawTexturedRectRotated(echo.arrowLerpX, arrowY, arrowSize, arrowSize, 180) -- 180 degrees to be upside down
+
+                surface.SetMaterial(echoOptionMat)
+
+                --1: Pin
+                surface.SetDrawColor(color1)
+                surface.DrawTexturedRect(startX, startY, boxSize, boxSize)
+                surface.SetMaterial(echoPinMat)
+                surface.SetDrawColor(255, 255, 255, menuAlpha)
+                surface.DrawTexturedRect(startX + boxSize/4, startY + boxSize/4, boxSize/2, boxSize/2)
+                draw.SimpleText("Pin", "TargetID", startX + boxSize/2, startY + boxSize + 5, Color(255, 255, 255, menuAlpha), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+
+                --2: Translate
+                surface.SetMaterial(echoOptionMat)
+                surface.SetDrawColor(color2)
+                surface.DrawTexturedRect(trans_x, startY, boxSize, boxSize)
+                surface.SetMaterial(echoTranslateMat)
+                surface.SetDrawColor(255, 255, 255, menuAlpha)
+                surface.DrawTexturedRect(trans_x + boxSize/4, startY + boxSize/4, boxSize/2, boxSize/2)
+                draw.SimpleText("Translate", "TargetID", trans_x + boxSize/2, startY + boxSize + 5, Color(255, 255, 255, menuAlpha), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+				surface.SetDrawColor(finalColor)
+            end
+        end
+
 		cam.PopModelMatrix()
 
 		if (alpha ~= 0 and active ~= 0) then
@@ -679,37 +806,72 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 end)
 
 local was_e_key_pressed = false
+local was_alt_key_down = false
+
 hook.Add("Think", "Echoes_thinkloop", function()
-	local ply = LocalPlayer()
-	if not IsValid(ply) then return end
+    local ply = LocalPlayer()
+    if not IsValid(ply) then return end
 
-	--get current key states
-	local is_alt_down = input.IsKeyDown(KEY_LALT) or input.IsKeyDown(KEY_RALT)
-	local is_e_down = input.IsKeyDown(KEY_E)
+    local is_alt_down = input.IsKeyDown(KEY_LALT) or input.IsKeyDown(KEY_RALT)
+    local is_e_down = input.IsKeyDown(KEY_E)
 
-	--if alt held, check for a single E press
-	if is_e_down and not was_e_key_pressed and is_alt_down then
-		local plyPos = ply:GetShootPos()
-		local closestEcho = nil
-		local activationDistSqr = activationDist * activationDist
-		local minDistSqr = activationDistSqr
+	--alt released
+    if not is_alt_down and was_alt_key_down and isAltEMenuOpen then
+        if altEMenuTargetEcho then
+            if altEMenuSelectedOption == 1 then --pin
+                TogglePin(altEMenuTargetEcho)
+            elseif altEMenuSelectedOption == 2 then --translate
+                TranslateEcho(altEMenuTargetEcho)
+            end
+            
+			--clean up
+            altEMenuTargetEcho.selectionLerp1 = nil
+            altEMenuTargetEcho.selectionLerp2 = nil
+            altEMenuTargetEcho.arrowLerpX = nil
+        end
+        isAltEMenuOpen = false
+        altEMenuTargetEcho = nil
+    end
 
-		-- Loop through all echoes
-		for i = 1, #echoes do
-			local echo = echoes[i]
+    --pressed e while holding alt
+    if is_e_down and not was_e_key_pressed and is_alt_down then
+        if not isAltEMenuOpen then -- Open the menu
+            local plyPos = ply:GetShootPos()
+            local closestEcho = nil
+            local minDistSqr = activationDist
 
-			local distSqr = plyPos:DistToSqr(echo.pos)
+            for i = 1, #echoes do
+                local echo = echoes[i]
+                if echo.active and echo.active > 0.9 then
+                    local distSqr = plyPos:DistToSqr(echo.pos)
+                    if distSqr < minDistSqr then
+                        minDistSqr = distSqr
+                        closestEcho = echo
+                    end
+                end
+            end
 
-			if distSqr < minDistSqr and echo.active == 1 then
-				minDistSqr = distSqr
-				closestEcho = echo
-			end
-		end
+            if closestEcho then
+                isAltEMenuOpen = true
+                altEMenuTargetEcho = closestEcho
+                altEMenuSelectedOption = 1
 
-		if closestEcho then
-			TogglePin(closestEcho)
-		end
-	end
+                altEMenuFadeStartTime = CurTime()
+                altEMenuTargetEcho.selectionLerp1 = 1
+                altEMenuTargetEcho.selectionLerp2 = 0
+                
+                local boxSize = 80
+                local boxPadding = 10
+                local totalWidth = (boxSize * 2) + boxPadding
+                local startX = -totalWidth / 2
+                altEMenuTargetEcho.arrowLerpX = startX + boxSize/2
+            end
+        else
+            altEMenuSelectedOption = altEMenuSelectedOption % 2 + 1
+			EchoSound("echo_select", math.random(95,105), 0.3)
+        end
+    end
 
-	was_e_key_pressed = is_e_down
+    was_e_key_pressed = is_e_down
+    was_alt_key_down = is_alt_down
 end)

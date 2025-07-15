@@ -1,4 +1,4 @@
-pinnedEchoes = {}
+pinnedEchoes = pinnedEchoes or {}
 local PINS_FILE = "echoesbeyond/pinned_echoes.json"
 
 function LoadPinnedEchoes()
