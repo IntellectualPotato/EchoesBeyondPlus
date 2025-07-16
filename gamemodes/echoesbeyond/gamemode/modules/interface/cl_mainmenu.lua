@@ -7,6 +7,7 @@ local creditsMat = Material("echoesbeyond/credits.png", "smooth")
 local changelogMat = Material("echoesbeyond/changelog.png", "smooth")
 local pinsMat = Material("echoesbeyond/pins.png", "smooth")
 local plusMat = Material("echoesbeyond/echo_plus.png", "smooth")
+local teleportMat = Material("echoesbeyond/teleport.png", "smooth")
 
 surface.CreateFont( "Echoes_statsfont", {
 	font = "Roboto",
