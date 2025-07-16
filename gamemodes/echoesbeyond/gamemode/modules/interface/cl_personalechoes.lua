@@ -46,17 +46,17 @@ function PANEL:Init()
 	subSubTitle:CenterHorizontal()
 	subSubTitle:SetY(75)
 
-	local conVar = GetConVar("echoes_personalshowall")
+	include("modules/echoes/cl_settings.lua")
+	local conVar = EchoesSettings["echoes_personalshowall"]
 
 	self.showAll = vgui.Create("DCheckBoxLabel", self)
 	self.showAll:SetText("Show all Echoes (Not just map-specific)")
-	self.showAll:SetValue(conVar:GetBool())
+	self.showAll:SetValue(conVar)
 	self.showAll:SizeToContents()
 	self.showAll:SetPos(15, 100)
 	self.showAll.OnChange = function(this, value)
 		self:ListEchoes(self.searchBar:GetValue())
-
-		conVar:SetBool(value)
+		GetConVar("echoes_personalshowall"):SetBool(value)
 	end
 
 	self.searchBar = vgui.Create("DTextEntry", self)

@@ -1,3 +1,5 @@
+include("modules/echoes/cl_settings.lua")
+
 function InitPartyMode(msg, milestone)
 	EchoNotify(msg)
 
@@ -42,7 +44,7 @@ function InitPartyMode(msg, milestone)
 			vignetteColor = color_black
 			endPartyEnabled = false
 
-			if (!GetConVar("echoes_music"):GetBool()) then return end
+			if (!EchoesSettings["echoes_music"]) then return end
 
 			PlayMusic()
 		end)
@@ -95,7 +97,7 @@ function FetchEchoes()
 		if (echoCount > #echoes) then
 			EchoSound("echo_create")
 
-			if (GetConVar("echoes_windowflash"):GetBool()) then
+			if (EchoesSettings["echoes_windowflash"]) then
 				system.FlashWindow()
 			end
 		end

@@ -1,9 +1,11 @@
 
 -- Recognizes offensive language in text
 if (CLIENT) then
+	include("modules/echoes/cl_settings.lua")
 	CreateClientConVar("echoes_profanity", "0")
 
 	cvars.AddChangeCallback("echoes_profanity", function(name, old, new)
+		if (not EchoesSettings["echoes_profanity"]) then return end
 		if (new == "0") then return end
 
 		for i = 1, #echoes do

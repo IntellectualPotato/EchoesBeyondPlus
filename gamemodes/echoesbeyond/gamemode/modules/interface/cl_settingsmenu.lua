@@ -4,14 +4,17 @@ local vignette = Material("echoesbeyond/vignette.png", "smooth")
 local PANEL = {}
 local lastOpenedTab = 1
 
+include("modules/echoes/cl_settings.lua")
+
 local function CreateCheckbox(parent, text, convarName, y)
     local checkbox = vgui.Create("DCheckBoxLabel", parent)
     checkbox:SetText(text)
     checkbox:SizeToContents()
     checkbox:SetPos(50, y)
-
-    checkbox:SetConVar(convarName)
-
+    checkbox:SetValue(EchoesSettings[convarName])
+    checkbox.OnChange = function(self, value)
+        GetConVar(convarName):SetBool(value)
+    end
     return y + 25
 end
 local function CreateSlider(parent, text, convar, min, max, decimals, y)
@@ -20,7 +23,7 @@ local function CreateSlider(parent, text, convar, min, max, decimals, y)
 	slider:SetMin(min)
 	slider:SetMax(max)
 	slider:SetDecimals(decimals)
-	slider:SetValue(convar:GetInt())
+	slider:SetValue(EchoesSettings[convar:GetName()])
 	slider:SetWide(parent:GetWide() - 100)
 	slider:SetPos(50, y)
 	slider.OnValueChanged = function(self, value)

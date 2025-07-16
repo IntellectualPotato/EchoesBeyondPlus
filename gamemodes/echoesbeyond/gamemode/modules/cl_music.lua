@@ -59,8 +59,9 @@ function StopMusic()
 	timer.Remove("echoesMusic")
 end
 
-hook.Add("InitPostEntity", "music_InitPostEntity", function()
-	if (!GetConVar("echoes_music"):GetBool()) then return end
+include("modules/echoes/cl_settings.lua")
 
+hook.Add("InitPostEntity", "music_InitPostEntity", function()
+	if (not EchoesSettings["echoes_music"]) then return end
 	PlayMusic()
 end)

@@ -158,3 +158,7 @@ else
 		vgui.Create("echoEntry")
 	end)
 end
+
+if CLIENT then
+    include("modules/echoes/cl_settings.lua")
+end

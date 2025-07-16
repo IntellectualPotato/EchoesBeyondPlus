@@ -12,19 +12,14 @@ local echo_mtx = Matrix()
 local __cos = math.cos
 local __sin = math.sin
 
-CreateClientConVar("echoes_showread", "1")
-CreateClientConVar("echoes_renderdist", "25000000")
-CreateClientConVar("echoes_disablereadsys", "0")
-CreateClientConVar("echoes_disablesigning", "0")
-CreateClientConVar("echoes_gabenmode", "0")
-CreateClientConVar("echoes_bypasschecks", "0")
-CreateClientConVar("echoes_debuginfo", "0")
+include("modules/echoes/cl_settings.lua")
+
 IDsort()
 
 cvars.AddChangeCallback("echoes_disablesigning", function(name, old, new)
-	for i = 1, #echoes do
-		echoes[i].cachedText = nil
-	end
+    for i = 1, #echoes do
+        echoes[i].cachedText = nil
+    end
 end, "echoes_disablesigning")
 
 local gabenNodeSounds = {
@@ -233,7 +228,7 @@ local function ComputeSqrEchoDist(origin)
 end
 
 local function UpdateEchoTextCache(inEchoes)
-	local disableSigning = GetConVar("echoes_disablesigning"):GetBool()
+	local disableSigning = EchoesSettings["echoes_disablesigning"]
 
 	for _, echo in ipairs(inEchoes) do
 		local skin = getSkin(echo)
@@ -280,8 +275,8 @@ local cameraData = {
 
 local function EchoDistSortFunc(a,b) return a.distSqr > b.distSqr end
 local function GetSortedVisibleEchoes()
-	local renderVoidEchoes = GetConVar("echoes_enablevoidechoes"):GetBool()
-	local cutOffDist = GetConVar("echoes_renderdist"):GetInt()
+	local renderVoidEchoes = EchoesSettings["echoes_enablevoidechoes"]
+	local cutOffDist = EchoesSettings["echoes_renderdist"]
 	local sortedEchoes = {}
 	local cdata = cameraData
 	local cx, cy, cz = cdata.cx, cdata.cy, cdata.cz
@@ -321,12 +316,12 @@ local function UpdateEchoRotations(inEchoes, dt)
 end
 
 local function UpdateEchoInteractions(inEchoes, curTimeSpeed, dt)
-	local disableReadSys = GetConVar("echoes_disablereadsys"):GetBool()
+	local disableReadSys = EchoesSettings["echoes_disablereadsys"]
 	local breathLayer = math.sin(curTimeSpeed) * 0.5
 	local activeZOffset = 24 + breathLayer
 	local readZOffset = 20
-	local gabenMode = GetConVar("echoes_gabenmode"):GetBool()
-	local profanity = GetConVar("echoes_profanity"):GetBool()
+	local gabenMode = EchoesSettings["echoes_gabenmode"]
+	local profanity = EchoesSettings["echoes_profanity"]
 
 	for _, echo in ipairs(inEchoes) do
 		echo.z_offset = echo.z_offset or 0
@@ -459,13 +454,13 @@ local altEMenuFadeStartTime = 0
 hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDepth, bDrawingSkybox)
 	if (bDrawingDepth or bDrawingSkybox) then return end
 
-	local profanity = GetConVar("echoes_profanity"):GetBool()
-	local showRead = GetConVar("echoes_showread"):GetBool()
-	local disableReadSys = GetConVar("echoes_disablereadsys"):GetBool()
-	local showDlights = GetConVar("echoes_dlights"):GetBool()
-	local DlightBright = GetConVar("echoes_dlights_brightness"):GetInt()
-	local enableAir = GetConVar("echoes_enableairechoes"):GetBool()
-	local debugInfo = GetConVar("echoes_debuginfo"):GetBool()
+	local profanity = EchoesSettings["echoes_profanity"]
+	local showRead = EchoesSettings["echoes_showread"]
+	local disableReadSys = EchoesSettings["echoes_disablereadsys"]
+	local showDlights = EchoesSettings["echoes_dlights"]
+	local DlightBright = EchoesSettings["echoes_dlights_brightness"]
+	local enableAir = EchoesSettings["echoes_enableairechoes"]
+	local debugInfo = EchoesSettings["echoes_debuginfo"]
 
 	local org, ang = EyePos(), EyeAngles()
 	local fwd = ang:Forward()
