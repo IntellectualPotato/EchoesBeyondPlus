@@ -673,12 +673,36 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 
 		if (alpha ~= 0 and active ~= 0) then
 			cam.IgnoreZ(true)
-
-			for j = 1, #echo.cachedText do
-				draw.SimpleText(echo.cachedText[j], font, 1, -(150 + j * 15), Color(0, 0, 0, math.min(active * 255, alpha)), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-				draw.SimpleText(echo.cachedText[j], font, 0, -(151 + j * 15), Color(255, 255, 255, math.min(active * 255, alpha)), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+			surface.SetFont(font)
+			local textAlpha = math.min(active * 255, alpha)
+			local maxWidth = 0
+			for _, line in ipairs(echo.cachedText) do
+				local w, _ = surface.GetTextSize(line)
+				maxWidth = math.max(maxWidth, w)
 			end
 
+			local _, fontHeight = surface.GetTextSize("A")
+			local numLines = #echo.cachedText
+			local lineSpacing = 15
+			local padding = 15
+
+			local boxWidth = maxWidth + padding * 10
+			local boxHeight = (numLines - 1) * lineSpacing + fontHeight + padding * 2
+			local boxX = -boxWidth / 2
+			--highest point of the text block is the top of the last line drawn
+			local highestLineCenterY = -(151 + numLines * lineSpacing)
+			local boxY = highestLineCenterY - (fontHeight / 2) - padding
+			local r, g, b = echo.color.r, echo.color.g, echo.color.b
+			local bgColor = Color(r * 0.2, g * 0.2, b * 0.2, textAlpha * 0.4)
+			surface.SetMaterial(echoOptionMat)
+			surface.SetDrawColor(bgColor)
+			surface.DrawTexturedRect(boxX, boxY, boxWidth, boxHeight)
+			surface.SetDrawColor(finalColor)
+			for j = 1, #echo.cachedText do
+				draw.SimpleText(echo.cachedText[j], font, 1, -(150 + j * lineSpacing), Color(0, 0, 0, textAlpha), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+				draw.SimpleText(echo.cachedText[j], font, 0, -(151 + j * lineSpacing), Color(255, 255, 255, textAlpha), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+			end
+			
 			if debugInfo then
 				IDsort()
 				local seq = idToSequential[echo.id] or -1
