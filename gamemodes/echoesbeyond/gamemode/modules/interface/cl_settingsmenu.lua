@@ -191,7 +191,7 @@ local totalTabsWidth = 0
 
 					mainMenu:Close()
 
-					file.Delete("echoesbeyond/readechoes.txt")
+					file.Delete("echoesbeyond/readechoes_plus.txt")
 					file.Delete("echoesbeyond/authtoken.txt")
 					authToken = nil
 					writtenEchoes = {}

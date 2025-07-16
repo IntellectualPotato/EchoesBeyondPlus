@@ -4,7 +4,7 @@ local vignette = Material("echoesbeyond/vignette.png", "smooth")
 local echoMat = Material("echoesbeyond/echo_simple.png", "smooth")
 
 hook.Add("InitPostEntity", "intro_InitPostEntity", function()
-	if (file.Exists("echoesbeyond/readechoes.txt", "DATA")) then return end
+	if (file.Exists("echoesbeyond/readechoes_plus.txt", "DATA")) then return end
 
 	local intro = vgui.Create("DPanel")
 	intro:SetSize(ScrW(), ScrH())

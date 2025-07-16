@@ -2,7 +2,7 @@
 hook.Add("InitPostEntity", "echoes_gamemodenotice", function()
 	local gamemode = gmod.GetGamemode()
 	if (gamemode.FolderName == "echoesbeyond") then return end
-	if (file.Exists("echoesbeyond/readechoes.txt", "DATA")) then return end
+	if (file.Exists("echoesbeyond/readechoes_plus.txt", "DATA")) then return end
 
 	EchoesConfirm(
 		"Did you mean to play Echoes Beyond?",
@@ -13,7 +13,7 @@ hook.Add("InitPostEntity", "echoes_gamemodenotice", function()
 		end,
 		function()
 			file.CreateDir("echoesbeyond")
-			file.Write("echoesbeyond/readechoes.txt", "") -- Make sure the notice doesn't show up again
+			file.Write("echoesbeyond/readechoes_plus.txt", "") -- Make sure the notice doesn't show up again
 		end
 	)
 end)

@@ -113,7 +113,7 @@ hook.Add("OnPauseMenuShow", "changelog_OnPauseMenuShow", function()
 end)
 
 hook.Add("InitPostEntity", "changelog_InitPostEntity", function()
-	if (!file.Exists("echoesbeyond/readechoes.txt", "DATA")) then -- Don't show the changelog if the player is playing for the first time
+	if (!file.Exists("echoesbeyond/readechoes_plus.txt", "DATA")) then -- Don't show the changelog if the player is playing for the first time
 		file.Write("echoesbeyond/changelogid.txt", changelogID)
 
 		return

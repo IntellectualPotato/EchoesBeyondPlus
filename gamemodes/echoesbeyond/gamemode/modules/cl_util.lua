@@ -60,9 +60,30 @@ function RemoveSigning(text)
 end
 
 function ReadEchoes()
-	if not file.Exists("echoesbeyond/readechoes.txt", "DATA") then return {} end
-	local raw = file.Read("echoesbeyond/readechoes.txt", "DATA") or ""
-	
+	if not file.Exists("echoesbeyond/readechoes_plus.txt", "DATA") then
+		-- Migrate from legacy file if it exists
+		if file.Exists("echoesbeyond/readechoes.txt", "DATA") then
+			local raw = file.Read("echoesbeyond/readechoes.txt", "DATA") or ""
+			local out = {}
+			if string.Trim(raw):sub(1,1) == "[" then
+				local ok, data = pcall(util.JSONToTable, raw)
+				if ok and istable(data) then
+					for _, v in ipairs(data) do
+						local id = tonumber(v)
+						if id then out[#out+1] = id end
+					end
+				end
+			else
+				for id in string.gmatch(raw, "[^\r\n]+") do
+					id = tonumber(id)
+					if id then out[#out+1] = id end
+				end
+			end
+			file.Write("echoesbeyond/readechoes_plus.txt", table.concat(out, "\n"))
+		end
+	end
+	if not file.Exists("echoesbeyond/readechoes_plus.txt", "DATA") then return {} end
+	local raw = file.Read("echoesbeyond/readechoes_plus.txt", "DATA") or ""
 	-- Convert JSON to newline format if it is json --------------------------
 	if string.Trim(raw):sub(1,1) == "[" then
 		local ok, data = pcall(util.JSONToTable, raw)
@@ -72,7 +93,7 @@ function ReadEchoes()
 				local id = tonumber(v)
 				if id then out[#out+1] = id end
 			end
-			file.Write("echoesbeyond/readechoes.txt", table.concat(out, "\n"))
+			file.Write("echoesbeyond/readechoes_plus.txt", table.concat(out, "\n"))
 			raw = table.concat(out, "\n")
 		end
 	end
@@ -93,7 +114,7 @@ function WriteEchoes(t)
 		if id and not seen[id] then out[#out + 1] = id; seen[id] = true end
 	end
 	file.CreateDir("echoesbeyond")
-	file.Write("echoesbeyond/readechoes.txt", table.concat(out, "\n"))
+	file.Write("echoesbeyond/readechoes_plus.txt", table.concat(out, "\n"))
 end
 
 idToSequential = {}

@@ -868,7 +868,7 @@ hook.Add("Think", "Echoes_thinkloop", function()
                 local echo = echoes[i]
                 if echo.active and echo.active > 0.9 then
                     local distSqr = plyPos:DistToSqr(echo.pos)
-                    if distSqr < minDistSqr then
+                    if distSqr < minDistSqr then	
                         minDistSqr = distSqr
                         closestEcho = echo
                     end
