@@ -11,9 +11,19 @@ local function CreateCheckbox(parent, text, convarName, y)
     checkbox:SetText(text)
     checkbox:SizeToContents()
     checkbox:SetPos(50, y)
-    checkbox:SetValue(EchoesSettings[convarName])
+    if convarName == "echoes_allowsandbox" then
+        checkbox:SetValue(GetConVar("echoes_allowsandbox"):GetBool())
+    else
+        checkbox:SetValue(EchoesSettings[convarName])
+    end
     checkbox.OnChange = function(self, value)
-        GetConVar(convarName):SetBool(value)
+        if convarName == "echoes_allowsandbox" then
+            net.Start("Echoes_ToggleAllowSandbox")
+            net.WriteBool(value)
+            net.SendToServer()
+        else
+            GetConVar(convarName):SetBool(value)
+        end
     end
     return y + 25
 end
