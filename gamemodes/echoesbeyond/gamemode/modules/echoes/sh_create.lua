@@ -160,5 +160,5 @@ else
 end
 
 if CLIENT then
-    include("modules/echoes/cl_settings.lua")
+    include("cl_settings.lua")
 end

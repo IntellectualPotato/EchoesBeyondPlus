@@ -12,7 +12,7 @@ local echo_mtx = Matrix()
 local __cos = math.cos
 local __sin = math.sin
 
-include("modules/echoes/cl_settings.lua")
+include("cl_settings.lua")
 
 IDsort()
 

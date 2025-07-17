@@ -1,4 +1,4 @@
-include("modules/echoes/cl_settings.lua")
+include("cl_settings.lua")
 
 function InitPartyMode(msg, milestone)
 	EchoNotify(msg)

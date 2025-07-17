@@ -4,7 +4,7 @@ local vignette = Material("echoesbeyond/vignette.png", "smooth")
 local PANEL = {}
 local lastOpenedTab = 1
 
-include("modules/echoes/cl_settings.lua")
+include("../echoes/cl_settings.lua")
 
 local function CreateCheckbox(parent, text, convarName, y)
     local checkbox = vgui.Create("DCheckBoxLabel", parent)
