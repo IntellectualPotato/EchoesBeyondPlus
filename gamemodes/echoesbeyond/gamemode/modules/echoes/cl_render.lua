@@ -274,6 +274,31 @@ local cameraData = {
 }
 
 local function EchoDistSortFunc(a,b) return a.distSqr > b.distSqr end
+local function UpdateEchoVisibilityStates()
+	local renderVoidEchoes = EchoesSettings["echoes_enablevoidechoes"]
+	local cutOffDist = EchoesSettings["echoes_renderdist"]
+	local cdata = cameraData
+	local cx, cy, cz = cdata.cx, cdata.cy, cdata.cz
+	local fx, fy, fz = cdata.fx, cdata.fy, cdata.fz
+	local curTime = CurTime()
+
+	for _, echo in ipairs(echoes) do
+		local inRange = echo.distSqr <= cutOffDist
+
+		if not echo.creationTime then
+			echo.creationTime = curTime + 0.01 * (#echoes - _)
+		end
+
+		local canFadeIn = inRange and curTime >= echo.creationTime
+
+		if canFadeIn then
+			echo.init = math.min((echo.init or 0) + FrameTime(), 1)
+		else
+			echo.init = math.max((echo.init or 0) - FrameTime(), 0)
+		end
+	end
+end
+
 local function GetSortedVisibleEchoes()
 	local renderVoidEchoes = EchoesSettings["echoes_enablevoidechoes"]
 	local cutOffDist = EchoesSettings["echoes_renderdist"]
@@ -283,14 +308,24 @@ local function GetSortedVisibleEchoes()
 	local fx, fy, fz = cdata.fx, cdata.fy, cdata.fz
 
 	for _, echo in ipairs(echoes) do
-		if (echo.distSqr > cutOffDist) then continue end
-		if (echo.inVoid and !renderVoidEchoes) then continue end
+		if (echo.init == 0) then
+			echo.wasVisibleLastFrame = false
+			continue
+		end
+		if (echo.inVoid and not renderVoidEchoes) then
+			echo.wasVisibleLastFrame = false
+			continue
+		end
 
 		local x, y, z = GetEchoPosition(echo)
 		local dot = ((cx-x) * fx + (cy-y) * fy + (cz-z) * fz)
 
-		if (dot > 0) then continue end
+		if (dot > 0) then
+			echo.wasVisibleLastFrame = false
+			continue
+		end
 
+		echo.wasVisibleLastFrame = true
 		sortedEchoes[#sortedEchoes+1] = echo
 	end
 
@@ -451,6 +486,40 @@ local altEMenuTargetEcho = nil
 local altEMenuSelectedOption = 1
 local altEMenuFadeStartTime = 0
 
+--cache sorted echoes, only redo when camera moves/rotates a bit
+local lastCameraData = {cx = 0, cy = 0, cz = 0, fx = 0, fy = 0, fz = 0}
+local lastSortedEchoes = {}
+local lastEchoCount = 0
+local cameraMoveThreshold = 50000
+local cameraAngleThreshold = 0.1
+
+local function CameraHasMovedOrRotated()
+    local d = cameraData
+    local last = lastCameraData
+    local dx = d.cx - last.cx
+    local dy = d.cy - last.cy
+    local dz = d.cz - last.cz
+    local moveDistSqr = dx*dx + dy*dy + dz*dz
+    if moveDistSqr > cameraMoveThreshold then return true end
+    local dot = d.fx * last.fx + d.fy * last.fy + d.fz * last.fz
+    if math.abs(1 - dot) > cameraAngleThreshold then return true end
+    return false
+end
+
+local function UpdateCachedEchoesIfNeeded()
+    if #echoes ~= lastEchoCount or CameraHasMovedOrRotated() then
+        ComputeSqrEchoDist(Vector(cameraData.cx, cameraData.cy, cameraData.cz))
+        lastSortedEchoes = GetSortedVisibleEchoes()
+        lastEchoCount = #echoes
+        lastCameraData.cx = cameraData.cx
+        lastCameraData.cy = cameraData.cy
+        lastCameraData.cz = cameraData.cz
+        lastCameraData.fx = cameraData.fx
+        lastCameraData.fy = cameraData.fy
+        lastCameraData.fz = cameraData.fz
+    end
+end
+
 hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDepth, bDrawingSkybox)
 	if (bDrawingDepth or bDrawingSkybox) then return end
 
@@ -477,19 +546,21 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 
 	echoToGroundFrac = Lerp(frameTime * 2, echoToGroundFrac, enableAir and 0 or 1)
 
-	ComputeSqrEchoDist(clientPos)
+	ComputeSqrEchoDist(Vector(cameraData.cx, cameraData.cy, cameraData.cz))
+
 	UpdateEchoInteractions(echoes, curTimeSpeed, frameTime)
-	local sortedEchoes = GetSortedVisibleEchoes()
+	UpdateEchoVisibilityStates()
+	UpdateCachedEchoesIfNeeded()
+	local sortedEchoes = lastSortedEchoes
 	local echoCount = #sortedEchoes
-	UpdateEchoRotations(sortedEchoes, frameTime)
+    UpdateEchoRotations(sortedEchoes, frameTime)
+	UpdateEchoTextCache(sortedEchoes)
 
 	for i = 1, echoCount do
 		local echo = sortedEchoes[i]
 		local seq = idToSequential[echo.id] or -1
 		echo.skin = (seq == 1 or echo.special) and "star" or DefaultSkin
 	end
-
-	UpdateEchoTextCache(sortedEchoes)
 
 	for i = 1, echoCount do
 		local echo = sortedEchoes[i]
@@ -514,8 +585,6 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 		else
 			if ((echo.explicit and !profanity) or echo.failed) then
 				echo.init = math.max(echo.init - frameTime, 0)
-			elseif (echo.init < 1 and ((echo.explicit and profanity) or !echo.explicit) or disableReadSys) then
-				echo.init = math.min(echo.init + frameTime, 1)
 			end
 		end
 

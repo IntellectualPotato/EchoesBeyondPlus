@@ -3,10 +3,17 @@
 if (SERVER) then
 	util.AddNetworkString("echoCreateEcho")
 	util.AddNetworkString("EchoGiveInfo")
+    util.AddNetworkString("Echoes_ScaryMode_Toggled")
 
 	hook.Add("KeyPress", "echoes_create_KeyPress", function(client, key)
 		if (key != IN_RELOAD) then return end
 		local bypass = GetConVar("echoes_bypasschecks"):GetBool()
+
+        --prevent creating echoes while dead
+        if client:Health() <= 0 then
+            EchoNotify(client, "A good message needs a voice. You cannot create an Echo while dead.")
+            return
+        end
 
 -- Prevent creating echoes too close to any spawn points
 			for _, spawn in ipairs(ents.FindByClass("info_player_start")) do
@@ -35,6 +42,17 @@ if (SERVER) then
 
 			net.Start("echoCreateEcho")
 			net.Send(client)
+		end)
+
+		net.Receive("Echoes_ScaryMode_Toggled", function(len, ply)
+			local enabled = net.ReadBool()
+			for _, sun in pairs(ents.FindByClass("env_sun")) do
+				if enabled then
+					sun:Fire("TurnOff")
+				else
+					sun:Fire("TurnOn")
+				end
+			end
 		end)
 else
 	createPos = vector_origin

@@ -48,6 +48,9 @@ end, "scarymode_renderdist")
 print(system.UpTime())
 
 function ApplyScaryMode(enabled)
+    net.Start("Echoes_ScaryMode_Toggled")
+    net.WriteBool(enabled)
+    net.SendToServer()
     local function lightEnv_updateCVar(newVal, cvarName)
         if LocalPlayer():IsListenServerHost() then
             if isbool(newVal) then

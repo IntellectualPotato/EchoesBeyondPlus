@@ -181,7 +181,7 @@ local totalTabsWidth = 0
 
 		y = CreateCheckbox(pnl, "Inject Sandbox Functions (Spawnmenu, etc, Requires mapchange)", "echoes_allowsandbox", y)
 		y = y + 20
-		
+
 		y = CreateCheckbox(pnl, "Bypass placement checks (void, ground, etc)", "echoes_bypasschecks", y)
 		y = CreateCheckbox(pnl, "Debug info", "echoes_debuginfo", y)
 
@@ -281,10 +281,6 @@ local totalTabsWidth = 0
 			ApplyScaryMode(value)
 		end
 		y = y + 25
-
-		if EchoesSettings["echoes_scarymode"] then
-			ApplyScaryMode(true)
-		end
 	end
 
 	SwitchToTab(lastOpenedTab)
