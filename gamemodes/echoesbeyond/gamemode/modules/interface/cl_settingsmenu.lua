@@ -4,8 +4,6 @@ local vignette = Material("echoesbeyond/vignette.png", "smooth")
 local PANEL = {}
 local lastOpenedTab = 1
 
-include("../echoes/cl_settings.lua")
-
 local function CreateCheckbox(parent, text, convarName, y)
     local checkbox = vgui.Create("DCheckBoxLabel", parent)
     checkbox:SetText(text)
@@ -172,7 +170,18 @@ local totalTabsWidth = 0
 	do
 		local y = 20
 		local pnl = tabPanels[4]
+
+		local SandboxLabel = vgui.Create("DLabel", pnl)
+		SandboxLabel:SetText("⬇ May be buggy, use with caution")
+		SandboxLabel:SetFont("Echoes_statsfont")
+		SandboxLabel:SetColor(Color(255, 60, 60))
+		SandboxLabel:SizeToContents()
+		SandboxLabel:SetPos(50, y)
+		y = y + SandboxLabel:GetTall() + 5
+
 		y = CreateCheckbox(pnl, "Inject Sandbox Functions (Spawnmenu, etc, Requires mapchange)", "echoes_allowsandbox", y)
+		y = y + 20
+		
 		y = CreateCheckbox(pnl, "Bypass placement checks (void, ground, etc)", "echoes_bypasschecks", y)
 		y = CreateCheckbox(pnl, "Debug info", "echoes_debuginfo", y)
 
@@ -247,6 +256,35 @@ local totalTabsWidth = 0
 			InitPartyMode("Engage party mode!")
 		end
 
+		y = y + 20
+
+		local scaryLabel = vgui.Create("DLabel", pnl)
+		scaryLabel:SetText("⬇ Requires Gmod Light / Environment Editor, click to download")
+		scaryLabel:SetFont("Echoes_statsfont")
+		scaryLabel:SetColor(Color(255, 60, 60))
+		scaryLabel:SizeToContents()
+		scaryLabel:SetPos(50, y)
+		scaryLabel:SetCursor("hand")
+		scaryLabel:SetMouseInputEnabled(true)
+		scaryLabel.OnMousePressed = function()
+			gui.OpenURL("https://steamcommunity.com/sharedfiles/filedetails/?id=2779451924")
+		end
+		y = y + scaryLabel:GetTall() + 5
+
+		local scaryCheckbox = vgui.Create("DCheckBoxLabel", pnl)
+		scaryCheckbox:SetText("Scary mode (dark, disables static lighting, new music)")
+		scaryCheckbox:SizeToContents()
+		scaryCheckbox:SetPos(50, y)
+		scaryCheckbox:SetValue(EchoesSettings["echoes_scarymode"])
+		scaryCheckbox.OnChange = function(self, value)
+			GetConVar("echoes_scarymode"):SetBool(value)
+			ApplyScaryMode(value)
+		end
+		y = y + 25
+
+		if EchoesSettings["echoes_scarymode"] then
+			ApplyScaryMode(true)
+		end
 	end
 
 	SwitchToTab(lastOpenedTab)

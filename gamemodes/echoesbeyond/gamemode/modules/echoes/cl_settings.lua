@@ -33,5 +33,114 @@ addSetting("echoes_smoothview", "1", "Bool")
 addSetting("echoes_speed", "100", "Int")
 addSetting("echoes_windowflash", "1", "Bool")
 addSetting("echoes_personalshowall", "0", "Bool")
+addSetting("echoes_scarymode", "0", "Bool")
+
+local previousSkyName = nil
+local previousMatSpecular = nil
+local userRenderDist = nil
+local scaryRenderDist = 665100
+
+cvars.AddChangeCallback("echoes_renderdist", function(name, old, new)
+    if EchoesSettings["echoes_scarymode"] then return end
+    userRenderDist = tonumber(new)
+end, "scarymode_renderdist")
+
+print(system.UpTime())
+
+function ApplyScaryMode(enabled)
+    local function lightEnv_updateCVar(newVal, cvarName)
+        if LocalPlayer():IsListenServerHost() then
+            if isbool(newVal) then
+                RunConsoleCommand(cvarName, newVal and "1" or "0")
+            else
+                RunConsoleCommand(cvarName, tostring(newVal))
+            end
+            return
+        end
+        net.Start("Environments_server_setcv")
+        net.WriteString(cvarName)
+        if isbool(newVal) then
+            net.WriteUInt(0, 2)
+            net.WriteBool(newVal)
+        elseif isnumber(newVal) then
+            net.WriteUInt(1, 2)
+            net.WriteUInt(newVal, 8)
+        elseif isstring(newVal) then
+            net.WriteUInt(2, 2)
+            net.WriteString(newVal)
+        end
+        net.SendToServer()
+    end
+    if enabled then
+        if not previousSkyName then
+            previousSkyName = GetConVar("sv_skyname"):GetString()
+        end
+        if not previousMatSpecular then
+            previousMatSpecular = GetConVar("mat_specular"):GetInt()
+        end
+        if not userRenderDist then
+            userRenderDist = GetConVar("echoes_renderdist"):GetInt()
+        end
+        EchoesSettings["echoes_renderdist"] = scaryRenderDist
+        lightEnv_updateCVar(1, "Environment_ambientLightLevel")
+        lightEnv_updateCVar(1, "Environment_SunLightLevel")
+        RunConsoleCommand("Environment_Destroy_Soundscapes")
+        RunConsoleCommand("Environment_stopsoundscape")
+        timer.Simple(5, function()
+            lightEnv_updateCVar(1, "Environment_DisableStaticSelfIllum")
+        end)
+        timer.Simple(10, function()
+            RunConsoleCommand("Environment_DisableStaticAmbientLighting")
+        end)
+        lightEnv_updateCVar("black", "sv_skyname")
+        RunConsoleCommand("mat_specular", "0")
+
+        hook.Add("SetupWorldFog", "ScaryModeBlackFog", function()
+            render.FogMode(MATERIAL_FOG_LINEAR)
+            render.FogStart(0)
+            render.FogEnd(900)
+            render.FogMaxDensity(1)
+            render.FogColor(0, 0, 0)
+            return true
+        end)
+        hook.Add("SetupSkyboxFog", "ScaryModeBlackFog", function(scale)
+            render.FogMode(MATERIAL_FOG_LINEAR)
+            render.FogStart(0)
+            render.FogEnd(600 * (scale or 1))
+            render.FogMaxDensity(1)
+            render.FogColor(0, 0, 0)
+            return true
+        end)
+    else
+        if userRenderDist then
+            EchoesSettings["echoes_renderdist"] = userRenderDist
+        else
+            EchoesSettings["echoes_renderdist"] = GetConVar("echoes_renderdist"):GetInt()
+        end
+        lightEnv_updateCVar(12, "Environment_ambientLightLevel")
+        lightEnv_updateCVar(12, "Environment_SunLightLevel")
+        timer.Simple(5, function()
+            lightEnv_updateCVar(0, "Environment_DisableStaticSelfIllum")
+        end)
+        if previousSkyName then
+            lightEnv_updateCVar(previousSkyName, "sv_skyname")
+        end
+        if previousMatSpecular then
+            RunConsoleCommand("mat_specular", tostring(previousMatSpecular))
+        end
+
+        hook.Remove("SetupWorldFog", "ScaryModeBlackFog")
+        hook.Remove("SetupSkyboxFog", "ScaryModeBlackFog")
+        --no way to re-enable static ambient lighting, have to reload map :(
+    end
+end
+
+hook.Add("InitPostEntity", "echoes_scarymode_autoapply", function()
+    if GetConVar("echoes_scarymode"):GetBool() then
+        timer.Simple(0.1, function()
+            ApplyScaryMode(true)
+        end)
+    end
+end)
 
 return EchoesSettings 

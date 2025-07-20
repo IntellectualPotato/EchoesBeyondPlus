@@ -12,8 +12,6 @@ local echo_mtx = Matrix()
 local __cos = math.cos
 local __sin = math.sin
 
-include("cl_settings.lua")
-
 IDsort()
 
 cvars.AddChangeCallback("echoes_disablesigning", function(name, old, new)
@@ -178,12 +176,11 @@ end
 local mapSkins = {
 	["gm_mttresort"] = "UTDR",
 	["ttt_mttresort_v2"] = "UTDR",
-	["gm_deltarune_card_castle"] = "UTDR",
-	["gm_deltarune"] = "UTDR",
 	["gm_finalcorridor"] = "UTDR",
 	["gm_greenroom"] = "UTDR",
 	["undertaleyellowsnowdin"] = "UTDR",
 	["gm_uty_darkruins"] = "UTDR",
+	["gm_dlt_ridearoundtown"] = "UTDR",
 	["gm_voidplaces"] = "VoidPlaces",
 	["otherside"] = "VoidPlaces",
 	["rp_asheville"] = "Apocalypse",
@@ -193,7 +190,8 @@ local mapSkins = {
 local mapPrefixSkins = {
 	["tbg_"] = "tbg",
 	["vp_"] = "VoidPlaces",
-	["vpc_"] = "VoidPlaces"
+	["vpc_"] = "VoidPlaces",
+	["gm_deltarune"] = "UTDR"
 }
 
 local function DetermineDefaultSkin()

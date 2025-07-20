@@ -45,8 +45,7 @@ function PANEL:Init()
 	subSubTitle:SizeToContents()
 	subSubTitle:CenterHorizontal()
 	subSubTitle:SetY(75)
-
-	include("modules/echoes/cl_settings.lua")
+	
 	local conVar = EchoesSettings["echoes_personalshowall"]
 
 	self.showAll = vgui.Create("DCheckBoxLabel", self)

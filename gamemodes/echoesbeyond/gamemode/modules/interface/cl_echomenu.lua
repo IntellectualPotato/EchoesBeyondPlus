@@ -182,9 +182,9 @@ local function CreateEchoMenu()
         local row = echoList:GetLine(selected)
         if row and row.EchoData then
             PrintTable(row.EchoData)
-            net.Start("EchoTeleport")
-                net.WriteVector(row.EchoData.pos)
-            net.SendToServer()
+                net.Start("EchoTeleport")
+                    net.WriteVector(row.EchoData.pos)
+                net.SendToServer()
             echoMenuPanel:SetVisible(false)
         end
     end

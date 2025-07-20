@@ -1,7 +1,6 @@
 
 -- Recognizes offensive language in text
 if (CLIENT) then
-	include("echoes/cl_settings.lua")
 	CreateClientConVar("echoes_profanity", "0")
 
 	cvars.AddChangeCallback("echoes_profanity", function(name, old, new)

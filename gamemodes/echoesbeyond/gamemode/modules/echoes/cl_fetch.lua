@@ -1,5 +1,3 @@
-include("cl_settings.lua")
-
 function InitPartyMode(msg, milestone)
 	EchoNotify(msg)
 

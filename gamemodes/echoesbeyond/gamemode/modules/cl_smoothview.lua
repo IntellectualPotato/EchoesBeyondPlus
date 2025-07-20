@@ -3,7 +3,6 @@
 CreateClientConVar("echoes_smoothview", "1")
 
 local curView
-include("echoes/cl_settings.lua")
 
 hook.Add("CalcView", "smoothview_CalcView", function(client, origin, angles, fov, zNear, zFar)
 	local smoothView = EchoesSettings["echoes_smoothview"]
