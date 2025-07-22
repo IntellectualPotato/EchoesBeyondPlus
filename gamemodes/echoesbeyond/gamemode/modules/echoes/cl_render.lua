@@ -227,6 +227,28 @@ local function ComputeSqrEchoDist(origin)
 	end
 end
 
+local cutOffDist = EchoesSettings["echoes_renderdist"] or 0
+
+local function UpdateEchoVisibilityStates()
+	local curTime = CurTime()
+
+	for _, echo in ipairs(echoes) do
+		local inRange = echo.distSqr <= cutOffDist
+
+		if not echo.creationTime then
+			echo.creationTime = curTime + 0.01 * (#echoes - _)
+		end
+
+		local canFadeIn = inRange and curTime >= echo.creationTime
+
+		if canFadeIn then
+			echo.init = math.min((echo.init or 0) + FrameTime(), 1)
+		else
+			echo.init = math.max((echo.init or 0) - FrameTime(), 0)
+		end
+	end
+end
+
 local function UpdateEchoTextCache(inEchoes)
 	local disableSigning = EchoesSettings["echoes_disablesigning"]
 
@@ -275,21 +297,29 @@ local cameraData = {
 
 local function EchoDistSortFunc(a,b) return a.distSqr > b.distSqr end
 local function GetSortedVisibleEchoes()
-	local renderVoidEchoes = EchoesSettings["echoes_enablevoidechoes"]
-	local cutOffDist = EchoesSettings["echoes_renderdist"]
+	cutOffDist = EchoesSettings["echoes_renderdist"]
 	local sortedEchoes = {}
 	local cdata = cameraData
 	local cx, cy, cz = cdata.cx, cdata.cy, cdata.cz
 	local fx, fy, fz = cdata.fx, cdata.fy, cdata.fz
 
 	for _, echo in ipairs(echoes) do
-		if (echo.distSqr > cutOffDist) then continue end
-		if (echo.inVoid and !renderVoidEchoes) then continue end
+		if (echo.init == 0) then
+			echo.wasVisibleLastFrame = false
+			continue
+		end
+		if (echo.inVoid and not EchoesSettings["echoes_enablevoidechoes"]) then
+			echo.wasVisibleLastFrame = false
+			continue
+		end
 
 		local x, y, z = GetEchoPosition(echo)
 		local dot = ((cx-x) * fx + (cy-y) * fy + (cz-z) * fz)
 
-		if (dot > 0) then continue end
+		if (dot > 0) then
+			echo.wasVisibleLastFrame = false
+			continue
+		end
 
 		sortedEchoes[#sortedEchoes+1] = echo
 	end
@@ -482,6 +512,7 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 	local sortedEchoes = GetSortedVisibleEchoes()
 	local echoCount = #sortedEchoes
 	UpdateEchoRotations(sortedEchoes, frameTime)
+	UpdateEchoVisibilityStates()
 
 	for i = 1, echoCount do
 		local echo = sortedEchoes[i]
@@ -514,8 +545,6 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 		else
 			if ((echo.explicit and !profanity) or echo.failed) then
 				echo.init = math.max(echo.init - frameTime, 0)
-			elseif (echo.init < 1 and ((echo.explicit and profanity) or !echo.explicit) or disableReadSys) then
-				echo.init = math.min(echo.init + frameTime, 1)
 			end
 		end
 
