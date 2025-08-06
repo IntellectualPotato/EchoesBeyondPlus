@@ -143,6 +143,7 @@ local totalTabsWidth = 0
 		y = CreateCheckbox(pnl, "Don't fade read echoes", "echoes_disablereadsys", y)
 		y = CreateCheckbox(pnl, "Show offensive Echoes", "echoes_profanity", y)
 		y = CreateCheckbox(pnl, "Flash game window when a new Echo is created", "echoes_windowflash", y)
+		y = CreateCheckbox(pnl, "Notify when an echo is created on ANY map", "echoes_notifynew", y)
 	end
 
 	do

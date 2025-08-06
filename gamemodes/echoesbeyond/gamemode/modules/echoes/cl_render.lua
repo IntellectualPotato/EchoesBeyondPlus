@@ -167,6 +167,20 @@ local skins = {
         dotmat = Material("echoesbeyond/Skins/apocecho_dot.png"),
         color = Color(220, 255, 230),
     },
+	["hls"] = {
+        mat1 = Material("echoesbeyond/Skins/hlsecho.png"),
+        mat2 = Material("echoesbeyond/Skins/hlsecho_blank.png"),
+		mat_read = Material("echoesbeyond/Skins/hlsecho_read.png", "mips"),
+        dotmat = {
+            mat = Material("echoesbeyond/Skins/hls_dot.png"),
+        	scale = 0.0024,
+            x_coords = {-1200-1000, -960, -720+1000}
+        },
+        sound = "echo_activate_hls",
+		dotWave = 300,
+        color = Color(200, 200, 200),
+		color_light = Color(255, 150, 150),
+    },
 }
 
 local function getSkin(echo)
@@ -191,7 +205,8 @@ local mapPrefixSkins = {
 	["tbg_"] = "tbg",
 	["vp_"] = "VoidPlaces",
 	["vpc_"] = "VoidPlaces",
-	["gm_deltarune"] = "UTDR"
+	["gm_deltarune"] = "UTDR",
+	["hls"] = "hls"
 }
 
 local function DetermineDefaultSkin()
@@ -389,6 +404,11 @@ local function UpdateEchoInteractions(inEchoes, curTimeSpeed, dt)
 					echo.read = true
 
 					readEchoCount = readEchoCount + 1
+
+					local mapName = game.GetMap()
+            		readMapCounts[mapName] = (readMapCounts[mapName] or 0) + 1
+            		SaveReadMapCounts()
+
 					WriteEchoes(savedData)
 				end
 			else

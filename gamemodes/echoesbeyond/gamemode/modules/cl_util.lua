@@ -59,6 +59,55 @@ function RemoveSigning(text)
     return text
 end
 
+function CreateProgressColorTable(current, total)
+    local tbl = {}
+    local progress = (total > 0 and current / total or 0)
+
+    --the color for the 'current' number based on progress
+    local currentColor
+    if progress >= 1 then
+        currentColor = Color(100, 255, 100) --bright green (100%)
+    elseif progress >= 0.9 then
+        currentColor = Color(173, 255, 47)  --light green (90%+)
+    elseif progress >= 0.75 then
+        currentColor = Color(255, 255, 100) --yellow (75%+)
+    elseif progress >= 0.5 then
+        currentColor = Color(255, 165, 0)   --orange (50%+)
+    elseif progress > 0 then
+        currentColor = Color(255, 69, 0)    --red-orange (1%+)
+    else
+        currentColor = Color(200, 200, 200) --white/grey (0%)
+    end
+
+    --the color for the 'total' number
+    local totalColor = Color(100, 255, 100)     --default Bright Green
+
+    table.insert(tbl, {text = tostring(current), color = currentColor})
+    table.insert(tbl, {text = "/", color = Color(150, 150, 150)}) --grey slash
+    table.insert(tbl, {text = tostring(total), color = totalColor})
+
+    return tbl
+end
+
+
+readMapCounts = readMapCounts or {}
+
+function LoadReadMapCounts()
+    local json = file.Read("echoesbeyond/read_map_counts.json", "DATA")
+    if json and json ~= "" then
+        local success, data = pcall(util.JSONToTable, json)
+        if success and type(data) == "table" then
+            readMapCounts = data
+            return
+        end
+    end
+    readMapCounts = {}
+end
+
+function SaveReadMapCounts()
+    file.Write("echoesbeyond/read_map_counts.json", util.TableToJSON(readMapCounts, true))
+end
+
 function ReadEchoes()
 	if not file.Exists("echoesbeyond/readechoes_plus.txt", "DATA") then
 		-- Migrate from legacy file if it exists

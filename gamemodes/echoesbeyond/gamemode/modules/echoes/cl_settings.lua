@@ -34,6 +34,7 @@ addSetting("echoes_speed", "100", "Int")
 addSetting("echoes_windowflash", "1", "Bool")
 addSetting("echoes_personalshowall", "0", "Bool")
 addSetting("echoes_scarymode", "0", "Bool")
+addSetting("echoes_notifynew", "0", "Bool")
 
 local previousSkyName = nil
 local previousMatSpecular = nil

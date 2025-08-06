@@ -399,20 +399,46 @@ function PANEL:Paint(width, height)
 		surface.DrawRect(0, 0, width, height)
 	end
 
-	 local echoCount = #echoes
-        local frameTime = FrameTime()
-        local percentage = 0
-        if globalEchoCount > 0 then
-            percentage = math.Round((#writtenEchoes / globalEchoCount) * 100, 2)
-        end
-        if not EchoesOnMaps[game.GetMap()] then draw.SimpleText("LOADING", "DermaLarge", width / 2, height - 120, Color(180, 180, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER) return end
-        draw.SimpleText("You represent " .. percentage .. "% of the total echoes.", "DermaDefault", width / 2, height - 120, Color(180, 180, 180), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-        draw.SimpleText("There " .. (echoCount == 1 and "is" or "are") .. " currently " .. echoCount .. " echo" .. (echoCount == 1 and "" or "es") .. " on this map. You have read " .. readEchoCount .. " of them. (" .. readEchoCount .. "/" .. echoCount .. ")", "Echoes_statsfont", width / 2, height - 90, self.colorStats1, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-        draw.SimpleText("You have written " .. #writtenEchoes .. " echo" .. (#writtenEchoes == 1 and "" or "es") .. " across " .. self.ownMapCount .. (self.ownMapCount == 1 and " map." or " different maps. and " .. EchoesOnMaps[game.GetMap()] .. " on this map."), "Echoes_statsfont", width / 2, height - 60, Color(200, 200, 200), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-        draw.SimpleText("There are currently " .. globalEchoCount .. " total echoes across " .. mapCount .. " different maps from " .. userCount .. " different users.", "Echoes_statsfont", width / 2, height - 30, self.colorStats3, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+	local echoCount = #echoes
+	local frameTime = FrameTime()
+	local percentage = 0
+	if globalEchoCount > 0 then
+		percentage = math.Round((#writtenEchoes / globalEchoCount) * 100, 2)
+	end
+	if not EchoesOnMaps[game.GetMap()] then draw.SimpleText("LOADING", "DermaLarge", width / 2, height - 120, Color(180, 180, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER) return end
+	draw.SimpleText("You represent " .. percentage .. "% of the total echoes.", "DermaDefault", width / 2, height - 120, Color(180, 180, 180), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 
-        self.colorStats1 = LerpColor(frameTime, self.colorStats1, Color(200, 200, 200))
-        self.colorStats3 = LerpColor(frameTime, self.colorStats3, Color(200, 200, 200))
+	surface.SetFont("Echoes_statsfont")
+	local prefix = "There " .. (echoCount == 1 and "is" or "are") .. " currently " .. echoCount .. " echo" .. (echoCount == 1 and "" or "es") .. " on this map. You have read "
+	local suffix = " of them."
+	local progressTbl = CreateProgressColorTable(readEchoCount, echoCount)
+
+	local prefix_w, _ = surface.GetTextSize(prefix)
+	local suffix_w, _ = surface.GetTextSize(suffix)
+	local progress_w = 0
+	for _, v in ipairs(progressTbl) do
+		local w, _ = surface.GetTextSize(v.text)
+		progress_w = progress_w + w
+	end
+	local total_w = prefix_w + progress_w + suffix_w
+	local start_x = (width / 2) - (total_w / 2)
+
+	draw.SimpleText(prefix, "Echoes_statsfont", start_x, height - 90, self.colorStats1, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+	start_x = start_x + prefix_w
+
+	for _, v in ipairs(progressTbl) do
+		draw.SimpleText(v.text, "Echoes_statsfont", start_x, height - 90, v.color, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+		local w, _ = surface.GetTextSize(v.text)
+		start_x = start_x + w
+	end
+
+	draw.SimpleText(suffix, "Echoes_statsfont", start_x, height - 90, self.colorStats1, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+
+	draw.SimpleText("You have written " .. #writtenEchoes .. " echo" .. (#writtenEchoes == 1 and "" or "es") .. " across " .. self.ownMapCount .. (self.ownMapCount == 1 and " map." or " different maps. and " .. EchoesOnMaps[game.GetMap()] .. " on this map."), "Echoes_statsfont", width / 2, height - 60, Color(200, 200, 200), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+	draw.SimpleText("There are currently " .. globalEchoCount .. " total echoes across " .. mapCount .. " different maps from " .. userCount .. " different users.", "Echoes_statsfont", width / 2, height - 30, self.colorStats3, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+
+	self.colorStats1 = LerpColor(frameTime, self.colorStats1, Color(200, 200, 200))
+	self.colorStats3 = LerpColor(frameTime, self.colorStats3, Color(200, 200, 200))
 end
 
 function PANEL:OnKeyCodePressed(key)

@@ -1,3 +1,5 @@
+local hasFetchedStatsOnce = hasFetchedStatsOnce or false
+
 function InitPartyMode(msg, milestone)
 	EchoNotify(msg)
 
@@ -197,6 +199,21 @@ function FetchEchoes()
 				break
 			end
 		end
+
+		local currentMap = game.GetMap()
+		local currentMapReadCount = 0
+
+		for _, echo in ipairs(echoes) do
+			if echo.read or echo.isOwner or echo.special then
+				currentMapReadCount = currentMapReadCount + 1
+			end
+		end
+
+		if readMapCounts[currentMap] ~= currentMapReadCount then
+			readMapCounts[currentMap] = currentMapReadCount
+			SaveReadMapCounts()
+		end
+
 		SyncPinnedStatus()
 		IDsort()
 	end, function(error)
@@ -238,7 +255,6 @@ function FetchStats()
 	http.Fetch("https://resonance.flatgrass.net/stats", function(body, _, _, code)
 		if (code != 200) then
 			EchoNotify("RESONANCE ERROR: " .. string.sub(body, 1, -2))
-
 			return
 		end
 
@@ -255,6 +271,25 @@ function FetchStats()
 
 			if (newCount > previousCount) then
 				InitPartyMode("A new milestone has been reached! " .. newCount .. " Echoes have been written! Engage party mode!", true)
+			end
+		end
+
+		if EchoesSettings["echoes_notifynew"] then
+			local newMaps = data.maps
+			if newMaps then
+				--check if this is the first time we're fetching the stats
+				if not hasFetchedStatsOnce then
+					hasFetchedStatsOnce = true
+				else
+					for mapName, newCount in pairs(newMaps) do
+						local oldCount = mapList[mapName] or 0
+
+						if newCount > oldCount then
+							print(mapName .. " New echo")
+							EchoNotify("A new echo was written on " .. mapName .. "!")
+						end
+					end
+				end
 			end
 		end
 
@@ -300,6 +335,8 @@ hook.Add("InitPostEntity", "echoes_fetch_InitPostEntity", function()
 	LoadPinnedEchoes()
 	FetchOwnEchoes()
 	FetchInfo()
+	FetchStats()
+	LoadReadMapCounts()
 
 	-- Fetch echoes, info, and stats every minute
 	timer.Create("echoesFetchEchoes", 60, 0, function() FetchEchoes() FetchInfo() FetchStats() end)

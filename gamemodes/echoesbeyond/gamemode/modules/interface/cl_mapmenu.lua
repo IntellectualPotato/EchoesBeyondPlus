@@ -105,6 +105,14 @@ function PANEL:Init()
 		self:ListMaps(searchBar:GetValue())
 	end
 
+	self.FilterHideCompleted = vgui.Create("DCheckBoxLabel", self)
+	self.FilterHideCompleted:SetText("Hide 100% read")
+	self.FilterHideCompleted:SetPos(10, 70)
+	self.FilterHideCompleted:SetValue(0)
+	self.FilterHideCompleted.OnChange = function()
+		self:ListMaps(searchBar:GetValue())
+	end
+
 	self.FilterInstalledOnly = vgui.Create("DCheckBoxLabel", self)
 	self.FilterInstalledOnly:SetText("Installed Only")
 	self.FilterInstalledOnly:SizeToContents()
@@ -187,6 +195,7 @@ function PANEL:ListMaps(filter)
 	local showUninstalled = self.FilterUninstalledOnly and self.FilterUninstalledOnly:GetChecked()
 	local sortByPersonalEchoes = self.SortByPersonalEchoes and self.SortByPersonalEchoes:GetChecked()
 	local showLocal = self.FilterShowLocal and self.FilterShowLocal:GetChecked()
+	local hideCompleted = self.FilterHideCompleted and self.FilterHideCompleted:GetChecked()
 
 	local mapPairs
 	if (showLocal) then
@@ -218,6 +227,12 @@ function PANEL:ListMaps(filter)
 		if (filter and !name:lower():find(filter:lower())) then continue end
 		if (not showLocal and not filter and amount < 10) then continue end
 
+		local totalEchoesOnMap = mapList[name] or amount
+		local readOnMap = readMapCounts[name] or 0
+		local isCompleted = (readOnMap >= totalEchoesOnMap) and totalEchoesOnMap > 0
+
+		if hideCompleted and isCompleted then continue end
+
 		local echoed = EchoesOnMaps and EchoesOnMaps[name] and EchoesOnMaps[name] > 0
 		local notEchoed = not (EchoesOnMaps and EchoesOnMaps[name] and EchoesOnMaps[name] > 0)
 		local installed = self.installedMaps[name]
@@ -233,11 +248,39 @@ function PANEL:ListMaps(filter)
 		entry:SetTall(20)
 		entry:DockMargin(0, 0, 0, 5)
 		entry.Paint = function(this, width, height)
-			local amount = mapList[name] or amount
-			local echoDisplay = (EchoesOnMaps and (EchoesOnMaps[name] ~= nil and EchoesOnMaps[name] or "NONE") or "NONE")
-			draw.SimpleText("(" .. echoDisplay .. ") " .. amount .. " Echoes", "DermaDefault", width - 10, height / 2, this.textColor, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+			local totalEchoesOnMap = mapList[name] or amount
+			local readOnMap = readMapCounts[name] or 0
+			local personalEchoesOnMap = (EchoesOnMaps and EchoesOnMaps[name]) or 0
+			local textPieces = {}
+			table.insert(textPieces, {text = "(" .. tostring(personalEchoesOnMap) .. ") ", color = (personalEchoesOnMap == 0 and Color(150, 50, 50) or Color(50, 150, 255))})
+			local progressTbl = CreateProgressColorTable(readOnMap, totalEchoesOnMap)
+			for _, piece in ipairs(progressTbl) do
+				table.insert(textPieces, piece)
+			end
+			table.insert(textPieces, {text = " Echoes", color = Color(200, 200, 200)})
+			surface.SetFont("DermaDefault")
+			local total_w = 0
+			for _, piece in ipairs(textPieces) do
+				local w, _ = surface.GetTextSize(piece.text)
+				total_w = total_w + w
+			end
+			local start_x = width - 10 - total_w
+			for _, piece in ipairs(textPieces) do
+				draw.SimpleText(piece.text, "DermaDefault", start_x, height / 2, piece.color, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+				local w, _ = surface.GetTextSize(piece.text)
+				start_x = start_x + w
+			end
 			local installed = self.installedMaps[name]
-			this.textColor = LerpColor(FrameTime() * (installed and 3 or 1), this.textColor, installed and Color(100, 200, 100) or Color(200, 200, 200))
+			local allRead = (readOnMap >= totalEchoesOnMap) and totalEchoesOnMap > 0
+			local targetColor
+			if allRead then
+				targetColor = Color(255, 215, 0)
+			elseif installed then
+				targetColor = Color(100, 200, 100)
+			else
+				targetColor = Color(200, 200, 200)
+			end
+			this.textColor = LerpColor(FrameTime() * 3, this.textColor, targetColor)
 		end
 		entry.textColor = Color(200, 200, 200)
 
@@ -266,7 +309,6 @@ function PANEL:ListMaps(filter)
 		entry:AlphaTo(255, 0.25, 0.02 * mapNum)
 		]] --this may make it funky with some stuff and its annoying to wait for it
 		self.mapList[name] = entry
-
 		mapNum = mapNum + 1
 	end
 
