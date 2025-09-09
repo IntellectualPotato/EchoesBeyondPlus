@@ -40,9 +40,51 @@ function PANEL:Init()
 	self.entry:CenterHorizontal()
 	self.entry:SetFont("HudDefault")
 	self.entry:SetY(85)
+
+	self.charCounter = vgui.Create("DLabel", self)
+	self.charCounter:SetFont("DermaDefault")
+	self.charCounter:SetColor(Color(175, 175, 175))
+	self.charCounter:SetText((maxBigSize - 0) .. " characters left")
+	self.charCounter:SizeToContents()
+	self.charCounter.initialWidth = self.charCounter:GetWide()
+
+	self.cooldownLabel = vgui.Create("DLabel", self)
+	self.cooldownLabel:SetFont("DermaDefault")
+	self.cooldownLabel:SetColor(Color(175, 175, 175))
+
+	self.charProgressBg = vgui.Create("DPanel", self)
+	self.charProgressBg.Paint = function(this, w, h)
+		surface.SetDrawColor(50, 50, 50)
+		surface.DrawRect(0, 0, w, h)
+	end
+
+	self.charProgress = vgui.Create("DPanel", self.charProgressBg)
+	self.charProgress:SetWide(0)
+	self.charProgress.Paint = function(this, w, h)
+		surface.SetDrawColor(175, 175, 175)
+		surface.DrawRect(0, 0, w, h)
+	end
+
 	self.entry.OnTextChanged = function(this) -- Add length & profanity warnings
 		local text = this:GetValue()
 		local length = text:len()
+
+		self.charCounter:SetText(math.max(0, maxBigSize - length) .. " characters left")
+		self.charCounter:SizeToContents()
+
+		local progress = math.Clamp(length / maxBigSize, 0, 1)
+		self.charProgress:SetWide(self.charProgressBg:GetWide() * progress)
+
+		local r, g, b = 175, 175, 175
+		if progress > 0.9 then
+			r, g, b = 255, 50, 50
+		elseif progress > 0.7 then
+			r, g, b = 255, 150, 0
+		end
+		self.charProgress.Paint = function(this, w, h)
+			surface.SetDrawColor(r, g, b)
+			surface.DrawRect(0, 0, w, h)
+		end
 
 		if (length > maxBigSize) then
 			this:SetText(text:sub(1, maxBigSize))
@@ -196,7 +238,9 @@ function PANEL:ToggleSize(bEnlarge)
 
 		self.entry:MoveTo(self.entry:GetX(), 85 + extra, 0.5)
 		self.entry:SizeTo(self.entry:GetWide(), 30, 0.5, nil, nil, function(animData, targetPanel)
-			targetPanel:SetMultiline(false)
+			if not self.large then
+				targetPanel:SetMultiline(false)
+			end
 		end)
 
 		self.submit:MoveTo(self.submit:GetX(), 125 + extra, 0.5)
@@ -210,6 +254,25 @@ function PANEL:Close()
 	end)
 
 	EchoSound("whoosh", 90, 0.75)
+end
+
+function PANEL:Think()
+	if (IsValid(self.charCounter)) then
+		self.charCounter:SetPos(self:GetWide() - self.charCounter:GetWide() - 20, self.entry:GetY() + self.entry:GetTall() + 4)
+
+		if (IsValid(self.charProgressBg)) then
+			self.charProgressBg:SetPos(self:GetWide() - self.charCounter.initialWidth - 20, self.charCounter:GetY() + self.charCounter:GetTall() + 2)
+			self.charProgressBg:SetSize(self.charCounter.initialWidth, 4)
+		end
+	end
+
+	if (IsValid(self.cooldownLabel)) then
+		local echoCount = (EchoesOnMaps and EchoesOnMaps[game.GetMap()] + 1) or 0
+		local cooldown = echoCount * 60
+		self.cooldownLabel:SetText("Cooldown will be " .. string.NiceTime(cooldown))
+		self.cooldownLabel:SizeToContents()
+		self.cooldownLabel:SetPos(self:GetWide() - self.cooldownLabel:GetWide() - 10, self:GetTall() - self.cooldownLabel:GetTall() - 10)
+	end
 end
 
 function PANEL:OnKeyCodePressed(key)
