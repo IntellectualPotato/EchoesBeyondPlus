@@ -78,6 +78,7 @@ else
 		local curTime = CurTime()
 
 		-- Create the echo in anticipation of the server response
+		local DefaultSkin = "default"
 		echoes[#echoes + 1] = {
 			angle = Angle(0, 0, 90),
 			creationTime = curTime,
@@ -94,7 +95,8 @@ else
 			read = false,
 			text = message,
 			active = 0,
-			init = 0
+			init = 0,
+			skin = DefaultSkin
 		}
 
 		EchoSound("echo_create")

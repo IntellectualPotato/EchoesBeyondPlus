@@ -216,6 +216,49 @@ function FetchEchoes()
 
 		SyncPinnedStatus()
 		IDsort()
+
+		--precompute skins for all echoes
+		local mapSkins = {
+			["gm_mttresort"] = "UTDR",
+			["ttt_mttresort_v2"] = "UTDR",
+			["gm_finalcorridor"] = "UTDR",
+			["gm_greenroom"] = "UTDR",
+			["undertaleyellowsnowdin"] = "UTDR",
+			["gm_uty_darkruins"] = "UTDR",
+			["gm_dlt_ridearoundtown"] = "UTDR",
+			["gm_voidplaces"] = "VoidPlaces",
+			["otherside"] = "VoidPlaces",
+			["rp_asheville"] = "Apocalypse",
+			["gm_city_of_silence"] = "Apocalypse"
+		}
+
+		local mapPrefixSkins = {
+			["tbg_"] = "tbg",
+			["vp_"] = "VoidPlaces",
+			["vpc_"] = "VoidPlaces",
+			["gm_deltarune"] = "UTDR",
+			["hls"] = "hls"
+		}
+
+		local function DetermineDefaultSkin()
+			local map = game.GetMap() or ""
+			if mapSkins[map] then
+				return mapSkins[map]
+			end
+			for prefix, skin in pairs(mapPrefixSkins) do
+				if string.StartWith(map, prefix) then
+					return skin
+				end
+			end
+			return "default"
+		end
+
+		local DefaultSkin = DetermineDefaultSkin()
+
+		for _, echo in ipairs(echoes) do
+			local seq = idToSequential[echo.id] or -1
+			echo.skin = (seq == 1 or echo.special) and "star" or DefaultSkin
+		end
 	end, function(error)
 		EchoNotify(error)
 	end)

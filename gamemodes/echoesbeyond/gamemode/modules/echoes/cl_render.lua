@@ -187,42 +187,7 @@ local function getSkin(echo)
 	return skins[echo.skin]
 end
 
-local mapSkins = {
-	["gm_mttresort"] = "UTDR",
-	["ttt_mttresort_v2"] = "UTDR",
-	["gm_finalcorridor"] = "UTDR",
-	["gm_greenroom"] = "UTDR",
-	["undertaleyellowsnowdin"] = "UTDR",
-	["gm_uty_darkruins"] = "UTDR",
-	["gm_dlt_ridearoundtown"] = "UTDR",
-	["gm_voidplaces"] = "VoidPlaces",
-	["otherside"] = "VoidPlaces",
-	["rp_asheville"] = "Apocalypse",
-	["gm_city_of_silence"] = "Apocalypse"
-}
-
-local mapPrefixSkins = {
-	["tbg_"] = "tbg",
-	["vp_"] = "VoidPlaces",
-	["vpc_"] = "VoidPlaces",
-	["gm_deltarune"] = "UTDR",
-	["hls"] = "hls"
-}
-
-local function DetermineDefaultSkin()
-	local map = game.GetMap() or ""
-	if mapSkins[map] then
-		return mapSkins[map]
-	end
-	for prefix, skin in pairs(mapPrefixSkins) do
-		if string.StartWith(map, prefix) then
-			return skin
-		end
-	end
-	return "default"
-end
-
-local DefaultSkin = DetermineDefaultSkin()
+local DefaultSkin = "default"  -- Precomputed in cl_fetch.lua
 
 local function GetEchoPosition(echo)
 	local x, y, z = __vunpack(echo.pos)
@@ -390,8 +355,6 @@ local function UpdateEchoInteractions(inEchoes, curTimeSpeed, dt)
 					if (gabenMode) then
 						EchoSound(table.Random(gabenIntroSounds), nil, 0.75)
 					else
-						local seq = idToSequential[echo.id] or -1
-						echo.skin = (seq == 1 or echo.special) and "star" or DefaultSkin
 						local skin = getSkin(echo)
 						EchoSound(istable(skin.sound) and skin.sound[math.random(1, #skin.sound)] or skin.sound or "echo_activate", echo.special and math.random(115, 125) or echo.explicit and math.random(65, 75) or math.random(95, 105), echo.read and 0.4 or 1)
 					end
@@ -533,12 +496,6 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 	local echoCount = #sortedEchoes
 	UpdateEchoRotations(sortedEchoes, frameTime)
 	UpdateEchoVisibilityStates()
-
-	for i = 1, echoCount do
-		local echo = sortedEchoes[i]
-		local seq = idToSequential[echo.id] or -1
-		echo.skin = (seq == 1 or echo.special) and "star" or DefaultSkin
-	end
 
 	UpdateEchoTextCache(sortedEchoes)
 
