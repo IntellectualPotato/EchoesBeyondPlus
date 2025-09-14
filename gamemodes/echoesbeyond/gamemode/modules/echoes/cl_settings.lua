@@ -1,4 +1,5 @@
 EchoesSettings = {}
+EchoesHUDHide = {}
 
 local function addSetting(name, default, getType)
     local cvar = CreateClientConVar(name, default, true, false)
@@ -14,6 +15,28 @@ local function addSetting(name, default, getType)
             EchoesSettings[name] = new
         end
     end, "EchoesSettings_" .. name)
+end
+
+local function UpdateHUDHideTable()
+    local hide = {}
+    
+    if EchoesSettings["echoes_hidehud_suit"] then
+        hide["CHudAmmo"] = true
+        hide["CHudBattery"] = true
+        hide["CHudSecondaryAmmo"] = true
+        hide["CHudSuitPower"] = true
+        hide["CHudHealth"] = true
+    end
+    
+    if EchoesSettings["echoes_hidehud_crosshair"] then
+        hide["CHudCrosshair"] = true
+    end
+    
+    if EchoesSettings["echoes_hidehud_weaponsel"] then
+        hide["CHudWeaponSelection"] = true
+    end
+    
+    EchoesHUDHide = hide
 end
 
 addSetting("echoes_showread", "1", "Bool")
@@ -35,6 +58,19 @@ addSetting("echoes_windowflash", "1", "Bool")
 addSetting("echoes_personalshowall", "0", "Bool")
 addSetting("echoes_scarymode", "0", "Bool")
 addSetting("echoes_notifynew", "0", "Bool")
+
+local hudSettings = {"echoes_hidehud_suit", "echoes_hidehud_crosshair", "echoes_hidehud_weaponsel"}
+
+for _, setting in ipairs(hudSettings) do
+    addSetting(setting, "0", "Bool")
+    
+    cvars.AddChangeCallback(setting, function(_, _, new)
+        EchoesSettings[setting] = (new == "1")
+        UpdateHUDHideTable()
+    end, "EchoesHUD_" .. setting)
+end
+
+UpdateHUDHideTable()
 
 local previousSkyName = nil
 local previousMatSpecular = nil

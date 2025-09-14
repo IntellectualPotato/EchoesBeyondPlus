@@ -1,10 +1,10 @@
 
 -- Hide HUD
---[[
 hook.Add("HUDShouldDraw", "interface_HUDShouldDraw", function(name)
-	return name == "CHudGMod"
+	if EchoesHUDHide[name] then
+		return false
+	end
 end)
-]]
 
 -- Block chat binds --NOT
 local binds = {

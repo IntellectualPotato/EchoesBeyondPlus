@@ -9,8 +9,8 @@ local function CreateCheckbox(parent, text, convarName, y)
     checkbox:SetText(text)
     checkbox:SizeToContents()
     checkbox:SetPos(50, y)
-    if convarName == "echoes_allowsandbox" then
-        checkbox:SetValue(GetConVar("echoes_allowsandbox"):GetBool())
+    if convarName == "echoes_allowsandbox" or convarName == "cl_drawhud" then
+        checkbox:SetValue(GetConVar(convarName):GetBool())
     else
         checkbox:SetValue(EchoesSettings[convarName])
     end
@@ -19,6 +19,8 @@ local function CreateCheckbox(parent, text, convarName, y)
             net.Start("Echoes_ToggleAllowSandbox")
             net.WriteBool(value)
             net.SendToServer()
+        elseif convarName == "cl_drawhud" then
+            RunConsoleCommand("cl_drawhud", value and "1" or "0")
         else
             GetConVar(convarName):SetBool(value)
         end
@@ -166,6 +168,11 @@ local totalTabsWidth = 0
 		y = CreateSlider(pnl, "Render Distance", GetConVar("echoes_renderdist"), 10000, 100000000, 0, y)
 		y = y + 5
 		y = CreateCheckbox(pnl, "Hide author signatures", "echoes_disablesigning", y)
+		y = y + 25
+		y = CreateCheckbox(pnl, "Draw Hud", "cl_drawhud", y)
+		y = CreateCheckbox(pnl, "Hide Suit/Health/Ammo", "echoes_hidehud_suit", y)
+		y = CreateCheckbox(pnl, "Hide Crosshair", "echoes_hidehud_crosshair", y)
+		y = CreateCheckbox(pnl, "Hide Weapon Selection", "echoes_hidehud_weaponsel", y)
 	end
 
 	do
