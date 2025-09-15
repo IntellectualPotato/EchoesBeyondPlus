@@ -22,12 +22,12 @@ function PANEL:Init()
 
 	EchoSound("whoosh", nil, 0.75)
 
-	local title = vgui.Create("DLabel", self)
-	title:SetFont("DermaLarge")
-	title:SetText("Create Echo")
-	title:SizeToContents()
-	title:CenterHorizontal()
-	title:SetY(10)
+	self.title = vgui.Create("DLabel", self)
+	self.title:SetFont("DermaLarge")
+	self.title:SetText("Create Echo")
+	self.title:SizeToContents()
+	self.title:CenterHorizontal()
+	self.title:SetY(10)
 
 	local subTitle = vgui.Create("DLabel", self)
 	subTitle:SetText("Echo your thoughts into the text field below.")
@@ -40,6 +40,8 @@ function PANEL:Init()
 	self.entry:CenterHorizontal()
 	self.entry:SetFont("HudDefault")
 	self.entry:SetY(85)
+	
+	self.panelTint = Color(25, 25, 25) --default background
 
 	self.charCounter = vgui.Create("DLabel", self)
 	self.charCounter:SetFont("DermaDefault")
@@ -126,6 +128,7 @@ function PANEL:Init()
 	self.submit = vgui.Create("DButton", self)
 	self.submit:SetSize(self:GetWide() * 0.3, 30)
 	self.submit:SetText("Submit")
+	self.isDraftMode = false
 	self.submit:SetFont("CreditsText")
 	self.submit:SetColor(Color(175, 175, 175))
 	self.submit:CenterHorizontal()
@@ -267,11 +270,85 @@ function PANEL:Think()
 	end
 
 	if (IsValid(self.cooldownLabel)) then
-		local echoCount = (EchoesOnMaps and EchoesOnMaps[game.GetMap()] + 1) or 0
-		local cooldown = echoCount * 60
-		self.cooldownLabel:SetText("Cooldown will be " .. string.NiceTime(cooldown))
+		local currentTime = os.time()
+		local totalRemaining = math.max(0, nextEcho - currentTime)
+		local isOnCooldown = totalRemaining > 0
+		local draftsEnabled = GetConVar("echoes_enable_drafts"):GetBool()
+		self.isDraftMode = draftsEnabled and isOnCooldown
+		
+		local cooldownText, cooldownColor
+		if self.isDraftMode then
+			local newSendTime = GetProjectedDraftSendTime()
+			local draftWait = math.max(0, newSendTime - os.time())
+			cooldownText = "Will be sent in: " .. string.NiceTime(draftWait)
+			cooldownColor = Color(255, 165, 0)
+		else
+			if isOnCooldown then
+				cooldownText = "Cooldown: " .. string.NiceTime(totalRemaining)
+				cooldownColor = Color(255, 165, 0)
+			else
+				local currentMap = game.GetMap()
+				local mapEchoCount = 0
+				for _, echo in ipairs(writtenEchoes) do
+					if echo.map == currentMap then
+						mapEchoCount = mapEchoCount + 1
+					end
+				end
+				local nextCooldown = (mapEchoCount + 1) * 60  --60s per map echo +1 for new
+				cooldownText = "Next cooldown: " .. string.NiceTime(nextCooldown)
+				cooldownColor = Color(175, 175, 175)
+			end
+		end
+		
+		self.cooldownLabel:SetText(cooldownText)
+		self.cooldownLabel:SetColor(cooldownColor)
 		self.cooldownLabel:SizeToContents()
 		self.cooldownLabel:SetPos(self:GetWide() - self.cooldownLabel:GetWide() - 10, self:GetTall() - self.cooldownLabel:GetTall() - 10)
+	end
+
+	if IsValid(self.title) then
+		local titleText = self.isDraftMode and "Draft Echo" or "Create Echo"
+		local titleColor = self.isDraftMode and Color(255, 165, 0) or color_white
+		self.title:SetText(titleText)
+		self.title:SetTextColor(titleColor)
+		self.title:SizeToContents()
+	end
+
+	self.panelTint = self.isDraftMode and LerpColor(0.1, Color(25, 25, 25), Color(255, 165, 0)) or Color(25, 25, 25)
+
+	if IsValid(self.submit) then
+		local buttonText = self.isDraftMode and "Submit Draft" or "Submit"
+		self.submit:SetText(buttonText)
+		self.submit:SetColor(self.isDraftMode and Color(255, 165, 0) or Color(175, 175, 175))
+	end
+
+	local draftCount = #drafts or 0
+	local draftText = self.isDraftMode and "Draft(" .. draftCount .. "/3)" or ""
+	if IsValid(self.draftCountLabel) then
+		self.draftCountLabel:SetText(draftText)
+		self.draftCountLabel:SizeToContents()
+		self.draftCountLabel:SetPos(10, self:GetTall() - self.draftCountLabel:GetTall() - 10)
+	else
+		if draftText ~= "" then
+			self.draftCountLabel = vgui.Create("DLabel", self)
+			self.draftCountLabel:SetFont("DermaDefault")
+			self.draftCountLabel:SetColor(Color(255, 165, 0))
+			self.draftCountLabel:SetText(draftText)
+			self.draftCountLabel:SizeToContents()
+			self.draftCountLabel:SetPos(10, self:GetTall() - self.draftCountLabel:GetTall() - 10)
+		end
+	end
+	if IsValid(self.draftCountLabel) and draftText == "" then
+		self.draftCountLabel:Remove()
+		self.draftCountLabel = nil
+	end
+
+	if IsValid(self.charCounter) then
+		self.charCounter:SetPos(self:GetWide() - self.charCounter:GetWide() - 20, self.entry:GetY() + self.entry:GetTall() + 4)
+	end
+	if IsValid(self.charProgressBg) then
+		self.charProgressBg:SetPos(self:GetWide() - self.charCounter.initialWidth - 20, self.charCounter:GetY() + self.charCounter:GetTall() + 2)
+		self.charProgressBg:SetSize(self.charCounter.initialWidth, 4)
 	end
 end
 
@@ -287,7 +364,13 @@ local vignette = Material("echoesbeyond/vignette.png")
 function PANEL:Paint(width, height)
 	Derma_DrawBackgroundBlur(self, self.startTime)
 
-	surface.SetDrawColor(25, 25, 25)
+	local bgColor = self.panelTint or Color(25, 25, 25)
+	if self.isDraftMode then
+		local orangeTint = LerpColor(0.1, Color(25, 25, 25), Color(255, 165, 0))
+		bgColor = orangeTint
+	end
+	
+	surface.SetDrawColor(bgColor)
 	surface.DrawRect(0, 0, width, height)
 
 	surface.SetMaterial(vignette)

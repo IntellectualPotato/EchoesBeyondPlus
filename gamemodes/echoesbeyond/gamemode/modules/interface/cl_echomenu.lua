@@ -6,6 +6,7 @@ local function PopulateEchoList()
     if not echoList then return end
     echoList:Clear()
     for _, echo in ipairs(echoes or {}) do
+        if echo.isDraft then continue end
         if hideRead and echo.read then continue end
         if hideOwner and echo.isOwner then continue end
         if hideVoid and echo.inVoid then continue end

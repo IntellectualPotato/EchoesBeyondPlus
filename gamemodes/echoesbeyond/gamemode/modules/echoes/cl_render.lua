@@ -12,8 +12,6 @@ local echo_mtx = Matrix()
 local __cos = math.cos
 local __sin = math.sin
 
-IDsort()
-
 cvars.AddChangeCallback("echoes_disablesigning", function(name, old, new)
     for i = 1, #echoes do
         echoes[i].cachedText = nil
@@ -181,13 +179,19 @@ local skins = {
         color = Color(200, 200, 200),
 		color_light = Color(255, 150, 150),
     },
+	["blueprint"] = {
+        mat1 = Material("echoesbeyond/Skins/echo_blueprint.png"),
+        mat2 = Material("echoesbeyond/Skins/echo_blueprint_blank.png"),
+		 dotmat = {
+            mat = Material("echoesbeyond/Skins/echo_blueprint_dot.png"),
+            x_coords = {-1200-75, -960, -720+80}
+        },
+    },
 }
 
 local function getSkin(echo)
 	return skins[echo.skin]
 end
-
-local DefaultSkin = "default"  -- Precomputed in cl_fetch.lua
 
 local function GetEchoPosition(echo)
 	local x, y, z = __vunpack(echo.pos)
@@ -705,7 +709,6 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 			end
 			
 			if debugInfo then
-				IDsort()
 				local seq = idToSequential[echo.id] or -1
 
 				local idStr = (echo.id == 1 and "➀" or tostring(echo.id))

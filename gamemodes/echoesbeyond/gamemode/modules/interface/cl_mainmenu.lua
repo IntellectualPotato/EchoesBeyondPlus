@@ -30,7 +30,6 @@ end)
 
 timer.Create("updateSVstats", 60, -1, function()
 	UpdatePlyStats()
-	IDsort()
 end)
 
 local PANEL = {}
@@ -399,7 +398,17 @@ function PANEL:Paint(width, height)
 		surface.DrawRect(0, 0, width, height)
 	end
 
-	local echoCount = #echoes
+	local function countRealEchoes()
+		local count = 0
+		for _, echo in ipairs(echoes) do
+			if not echo.isDraft then
+				count = count + 1
+			end
+		end
+		return count
+	end
+
+	local echoCount = countRealEchoes()
 	local frameTime = FrameTime()
 	local percentage = 0
 	if globalEchoCount > 0 then

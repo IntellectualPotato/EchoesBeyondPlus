@@ -288,7 +288,32 @@ local totalTabsWidth = 0
 			GetConVar("echoes_scarymode"):SetBool(value)
 			ApplyScaryMode(value)
 		end
-		y = y + 25
+		y = y + 50
+
+		local draftsLabel = vgui.Create("DLabel", pnl)
+		draftsLabel:SetText("⬇ May bug, as i suck, so it needs to be enabled manually")
+		draftsLabel:SetFont("Echoes_statsfont")
+		draftsLabel:SetColor(Color(255, 60, 60))
+		draftsLabel:SizeToContents()
+		draftsLabel:SetPos(50, y)
+		y = y + draftsLabel:GetTall() + 5
+
+		local draftsCheckbox = vgui.Create("DCheckBoxLabel", pnl)
+		draftsCheckbox:SetText("Enable drafts (Make echoes on cooldown)")
+		draftsCheckbox:SizeToContents()
+		draftsCheckbox:SetPos(50, y)
+		draftsCheckbox:SetValue(EchoesSettings["echoes_enable_drafts"])
+		draftsCheckbox.OnChange = function(self, value)
+			GetConVar("echoes_enable_drafts"):SetBool(value)
+		end
+		y = y + 20
+
+		local draftsInfo = vgui.Create("DLabel", pnl)
+		draftsInfo:SetText("Drafts allow creating up to 3 echoes while on cooldown, Drafts can be seen in personal echoes menu.")
+		draftsInfo:SetColor(Color(128, 128, 128))
+		draftsInfo:SizeToContents()
+		draftsInfo:SetPos(50, y)
+		y = y + draftsInfo:GetTall() + 5
 	end
 
 	SwitchToTab(lastOpenedTab)

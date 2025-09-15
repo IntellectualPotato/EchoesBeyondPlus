@@ -168,13 +168,33 @@ end
 
 idToSequential = {}
 function IDsort()
-	table.sort(echoes, function(a, b)
+	local realEchoes = {}
+	for _, entry in ipairs(echoes) do
+		if not entry.isDraft and entry.id >= 0 then
+			table.insert(realEchoes, entry)
+		end
+	end
+
+	table.sort(realEchoes, function(a, b)
 		return a.id < b.id
 	end)
 
-	for i, entry in ipairs(echoes) do
+	table.Empty(idToSequential)
+
+	for i, entry in ipairs(realEchoes) do
 		idToSequential[entry.id] = i
 	end
+
+	local sortedEchoes = {}
+	for _, entry in ipairs(realEchoes) do
+		table.insert(sortedEchoes, entry)
+	end
+	for _, entry in ipairs(echoes) do
+		if entry.isDraft then
+			table.insert(sortedEchoes, entry)
+		end
+	end
+	echoes = sortedEchoes
 end
 
 EchoesOnMaps = {}
