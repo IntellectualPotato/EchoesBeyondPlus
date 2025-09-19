@@ -2,6 +2,7 @@
 A modification/fork of the echoes beyond garry's mod gamemode, just random changes that i put
 Includes:
 * Skin system that gives a few maps and the first echo on the map a unique skin
+* Funky "draft" system to make up to 3 echoes queued to be created when cooldown expires
 * "Pin" echo system to pin echoes you want to remember, along with a translate feature
 * A couple extra settings
 * Map list filters (installed, uninstalled, echoed on/not echoed)
