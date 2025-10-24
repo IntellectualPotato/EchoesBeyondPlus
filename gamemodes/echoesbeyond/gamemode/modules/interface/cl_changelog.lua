@@ -2,7 +2,7 @@
 -- A simple changelog menu
 local PANEL = {}
 local vignette = Material("echoesbeyond/vignette.png")
-local changelogID = "sessiontokens"
+local changelogID = "ebplusCommunityMenu"
 
 function PANEL:Init()
 	if (IsValid(changeLog)) then
@@ -53,8 +53,15 @@ function PANEL:Init()
 	end
 
 	changelog:SetText([[
-		- Backend security improvements
-		- Fixed custom speed not being set on map load
+		- Actually started using the changelog system for EB+ (Hello!!)
+		- Added github update checking, update available button
+		- Added a "Community" menu, has names of people from EB community
+		- Added EB+ credits to credits menu for used assets
+		- Added "Slow activate" echo sound and option
+		- Added "Immersion Mode" option to disable cheaty things, on by default
+		- Fixed "profanity" echoes not checking distance for echo creation
+		- Fixed echoes not being able to be made due to max drafts, even off cooldown
+		- Tried to Fix player list not being same alpha as main menu when spamming tab
 	]])
 
 	local close = vgui.Create("DButton", self)
@@ -110,6 +117,43 @@ hook.Add("OnPauseMenuShow", "changelog_OnPauseMenuShow", function()
 	changeLog:Close()
 
 	return false
+end)
+
+EBPLUS_UpdateAvailable = false
+
+--Do a github update check woohoo
+local function CheckForUpdates()
+	http.Fetch("https://raw.githubusercontent.com/IntellectualPotato/EchoesBeyondPlus/main/gamemodes/echoesbeyond/gamemode/modules/interface/cl_changelog.lua", function(body, len, headers, code)
+		if code == 200 then
+			--extract changelogID from fetched file
+			local changelogIDMatch = string.match(body, 'local changelogID = "([^"]+)"')
+			if changelogIDMatch then
+				local latestChangelogID = changelogIDMatch
+
+				--get current changelogID of local installation, compare to fetched one
+				EBPLUS_UpdateAvailable = (latestChangelogID ~= changelogID)
+				if EBPLUS_UpdateAvailable then
+					print("Update available! New changelog ID: " .. latestChangelogID)
+				end
+			else
+				print("ERROR: Could not extract changelog ID from GitHub file")
+			end
+		else
+			print("Failed to fetch changelog from GitHub. " .. code)
+		end
+	end, function(err)
+		print("Error fetching changelog from GitHub: " .. err)
+	end)
+end
+
+--check for updates
+timer.Simple(1, function()
+	CheckForUpdates()
+end)
+
+--30 minute check because whynot i doubt it will get use though LOL
+timer.Create("EBPLUS_UpdateCheck", 1800, 0, function()
+	CheckForUpdates()
 end)
 
 hook.Add("InitPostEntity", "changelog_InitPostEntity", function()

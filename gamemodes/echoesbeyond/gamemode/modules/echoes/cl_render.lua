@@ -336,6 +336,8 @@ local function UpdateEchoInteractions(inEchoes, curTimeSpeed, dt)
 	local readZOffset = 20
 	local gabenMode = EchoesSettings["echoes_gabenmode"]
 	local profanity = EchoesSettings["echoes_profanity"]
+	local slowActivate = EchoesSettings["echoes_slowactivate"]
+	local activateSpeed = slowActivate and 1.5 or 3
 
 	for _, echo in ipairs(inEchoes) do
 		echo.z_offset = echo.z_offset or 0
@@ -344,14 +346,14 @@ local function UpdateEchoInteractions(inEchoes, curTimeSpeed, dt)
 
 		if (((echo.explicit and profanity) or !echo.explicit) and !echo.loading) then
 			if (echo.distSqr < activationDist) then
-				local active = math.min(echo.active + dt * 3, 1)
+				local active = math.min(echo.active + dt * activateSpeed, 1)
 
 				local cameraZ = cameraData.cz
 				local _, _, echoZ = echo.pos:Unpack()
 				local heightDiff = cameraZ - echoZ -32
 
 				echo.active = active
-				echo.z_offset = Lerp(dt * 3, echo.z_offset, activeZOffset  + heightDiff)
+				echo.z_offset = Lerp(dt * activateSpeed, echo.z_offset, activeZOffset  + heightDiff)
 
 				if (!echo.soundActive) then
 					echo.soundActive = true
@@ -360,7 +362,11 @@ local function UpdateEchoInteractions(inEchoes, curTimeSpeed, dt)
 						EchoSound(table.Random(gabenIntroSounds), nil, 0.75)
 					else
 						local skin = getSkin(echo)
-						EchoSound(istable(skin.sound) and skin.sound[math.random(1, #skin.sound)] or skin.sound or "echo_activate", echo.special and math.random(115, 125) or echo.explicit and math.random(65, 75) or math.random(95, 105), echo.read and 0.4 or 1)
+						local soundName = istable(skin.sound) and skin.sound[math.random(1, #skin.sound)] or skin.sound or "echo_activate"
+						if slowActivate and soundName == "echo_activate" then
+							soundName = "echo_activate_slow"
+						end
+						EchoSound(soundName, echo.special and math.random(115, 125) or echo.explicit and math.random(65, 75) or math.random(95, 105), echo.read and 0.4 or 1)
 					end
 				end
 
@@ -478,6 +484,8 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 	local DlightBright = EchoesSettings["echoes_dlights_brightness"]
 	local enableAir = EchoesSettings["echoes_enableairechoes"]
 	local debugInfo = EchoesSettings["echoes_debuginfo"]
+	local immersiveMode = EchoesSettings["echoes_immersivemode"]
+	if immersiveMode then debugInfo = false end
 
 	local org, ang = EyePos(), EyeAngles()
 	local fwd = ang:Forward()

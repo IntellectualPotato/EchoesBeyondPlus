@@ -4,6 +4,16 @@ local flatgrassGrey, flatgrassColor, fgWidth, fgHeight = Material("echoesbeyond/
 
 local y = 80
 
+local function AddHeader(text)
+	local header = vgui.Create("DLabel", creditsMenu)
+	header:SetText(text)
+	header:SetFont("DermaDefaultBold")
+	header:SizeToContents()
+	header:CenterHorizontal()
+	header:SetY(y)
+	y = y + 30
+end
+
 local function AddCredit(text1, text2)
 	local label1 = vgui.Create("DLabel", creditsMenu)
 	label1:SetText(text1)
@@ -46,6 +56,7 @@ function PANEL:Init()
 	title:CenterHorizontal()
 	title:SetY(20)
 
+	AddHeader("Echoes: Beyond")
 	AddCredit("Max Payne 1 (Remedy)", "Notification Sound")
 	AddCredit("Catherine (L7D)", "Menu Movement Sound")
 	AddCredit("PlayStation 2 (Sony Computer Entertainment)", "Echo Sounds")
@@ -53,11 +64,29 @@ function PANEL:Init()
 	AddCredit("Clockwork (CloudSixteen)", "Vignette Texture")
 	AddCredit("Gabe Newell (Valve Software)", "GabeN Mode Sounds")
 	AddCredit("Kevin MacLeod", "Party Song")
-	AddCredit("Aspect™", "Clientside Development")
+	AddCredit("Aspect™", "Clientside Development, Original addon")
 	AddCredit("Pancakes", "Serverside Development")
 	AddCredit("Kaz", "Performance Improvements")
 	AddCredit("Friends", "Feedback, ideas, support, and testing")
 	AddCredit("Bad Actors", "Valuable web security experience")
+
+	AddHeader("Echoes: Beyond Plus")
+	AddCredit("IntellectualPotato", "Fork creation")
+	AddCredit("The Beginner's Guide (Everything Unlimited Ltd.)", "TBG Skin skin/sounds")
+	AddCredit("DELTARUNE / UNDERTALE (Toby Fox)", "UTDR Skin base/sounds")
+	AddCredit("Friends(+)", "Testing, Ideas, Being there when i need them ♥")
+
+	AddHeader("(EB+) ScaryMode Songs/Ambience")
+
+	AddCredit("Amnesia: The Dark Descent (Frictional Games)", "Songs/Ambience")
+	AddCredit("OMORI (OMOCAT)", "Songs/Ambience")
+	AddCredit("OneShot (Future Cat)", "Songs/Ambience")
+	AddCredit("Piglet's Big Game (Doki Denki Studio / Disney Interactive)", "Songs/Ambience")
+	AddCredit("Yume Nikki (Kikiyama)", "Songs/Ambience")
+	AddCredit("Yume 2kki (Yume 2kki Team)", "Songs/Ambience")
+	AddCredit("Undertale Yellow (Team Undertale Yellow)", "Songs/Ambience")
+
+
 
 	local fgHeight = (fgHeight / fgWidth) * self:GetWide()
 

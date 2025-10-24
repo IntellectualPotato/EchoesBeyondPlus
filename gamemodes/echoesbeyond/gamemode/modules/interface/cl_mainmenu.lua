@@ -4,10 +4,13 @@ local settingsMat = Material("echoesbeyond/settings.png", "smooth")
 local reportMat = Material("echoesbeyond/report.png", "smooth")
 local vignette = Material("echoesbeyond/vignette.png", "smooth")
 local creditsMat = Material("echoesbeyond/credits.png", "smooth")
+local communityMat = Material("echoesbeyond/communitybtn.png", "smooth")
 local changelogMat = Material("echoesbeyond/changelog.png", "smooth")
 local pinsMat = Material("echoesbeyond/pins.png", "smooth")
 local plusMat = Material("echoesbeyond/echo_plus.png", "smooth")
 local teleportMat = Material("echoesbeyond/teleport.png", "smooth")
+local progressMat = Material("echoesbeyond/EchoProgress.png", "smooth")
+local progressMatlc = Material("echoesbeyond/EchoProgress_lowcontrast.png", "smooth")
 
 surface.CreateFont( "Echoes_statsfont", {
 	font = "Roboto",
@@ -67,6 +70,40 @@ function PANEL:Init()
 	subTitle:SizeToContents()
 	subTitle:CenterHorizontal()
 	subTitle:SetY(55)
+
+	--update available button
+	local updateButton = vgui.Create("DButton", self)
+	updateButton:SetText("")
+	updateButton:SetSize(180, 25)
+	updateButton:SetPos((self:GetWide() - 180) / 2, self:GetTall() - 160)
+	updateButton:SetVisible(EBPLUS_UpdateAvailable or false)
+	updateButton.Paint = function(self, w, h)
+		if not EBPLUS_UpdateAvailable then return end
+		surface.SetDrawColor(self:IsDown() and Color(100, 100, 100) or self:IsHovered() and Color(75, 75, 75) or Color(50, 50, 50))
+		surface.DrawRect(0, 0, w, h)
+		surface.SetMaterial(progressMatlc)
+		local tileSize = h + 25
+		local yOffset = CurTime() * 8 % tileSize
+		for x = 0, w - tileSize, tileSize do
+			surface.DrawTexturedRect(x, yOffset - tileSize, tileSize, tileSize)
+			surface.DrawTexturedRect(x, yOffset, tileSize, tileSize)
+		end
+		local remaining = w % tileSize
+		if remaining > 0 then
+			local x = w - remaining
+			surface.DrawTexturedRectUV(x, yOffset - tileSize, remaining, tileSize, 0, 0, remaining / tileSize, 1)
+			surface.DrawTexturedRectUV(x, yOffset, remaining, tileSize, 0, 0, remaining / tileSize, 1)
+		end
+		draw.SimpleText("EB+ Update Available!", "DermaDefaultBold", w/2, h/2, Color(255, 255, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		surface.SetDrawColor(0, 0, 0, 200)
+		surface.SetMaterial(vignette)
+		surface.DrawTexturedRect(0, 0, w, h)
+	end
+	updateButton.DoClick = function()
+		gui.OpenURL("https://github.com/IntellectualPotato/EchoesBeyondPlus")
+		EchoSound("button_click")
+	end
+
 
 	local mapOption = vgui.Create("DButton", self)
 	mapOption:SetSize(48, 48)
@@ -134,19 +171,21 @@ function PANEL:Init()
         end
     end
 
-	local allEchoes = vgui.Create("DButton", self)
-	allEchoes:SetSize(48, 48)
-	allEchoes:SetPos(10, pinnedEchoesButton:GetY() + pinnedEchoesButton:GetTall() + 10)
-	allEchoes:SetText("")
-	allEchoes.Paint = function(self, width, height)
-		surface.SetDrawColor(self:IsDown() and Color(100, 100, 100) or self:IsHovered() and Color(75, 75, 75) or Color(50, 50, 50))
-		surface.SetMaterial(Material("echoesbeyond/echo_multi.png", "smooth"))
-		surface.DrawTexturedRect(-7, -7, width + 14, height + 14)
-	end
-	allEchoes.DoClick = function()
-		EchoSound("button_click")
-		if (IsValid(mainMenu)) then mainMenu:Close(true) end
-		LocalPlayer():ConCommand("echoes_menu")
+	if not EchoesSettings["echoes_immersivemode"] then
+		local allEchoes = vgui.Create("DButton", self)
+		allEchoes:SetSize(48, 48)
+		allEchoes:SetPos(10, pinnedEchoesButton:GetY() + pinnedEchoesButton:GetTall() + 10)
+		allEchoes:SetText("")
+		allEchoes.Paint = function(self, width, height)
+			surface.SetDrawColor(self:IsDown() and Color(100, 100, 100) or self:IsHovered() and Color(75, 75, 75) or Color(50, 50, 50))
+			surface.SetMaterial(Material("echoesbeyond/echo_multi.png", "smooth"))
+			surface.DrawTexturedRect(-7, -7, width + 14, height + 14)
+		end
+		allEchoes.DoClick = function()
+			EchoSound("button_click")
+			if (IsValid(mainMenu)) then mainMenu:Close(true) end
+			LocalPlayer():ConCommand("echoes_menu")
+		end
 	end
 	
 	local settingsOption = vgui.Create("DButton", self)
@@ -207,11 +246,35 @@ function PANEL:Init()
 
 		if (IsValid(settingsMenu)) then settingsMenu:Close(true) end
 		if (IsValid(reportMenu)) then reportMenu:Close(true) end
+		if (IsValid(communityMenu)) then communityMenu:Close(true) end
 
 		if (IsValid(creditsMenu)) then
 			creditsMenu:Close()
 		else
 			vgui.Create("echoCreditsMenu")
+		end
+	end
+
+	local CommunityOption = vgui.Create("DButton", self)
+	CommunityOption:SetSize(48, 48)
+	CommunityOption:SetPos(self:GetWide() - 48 - 10, creditsOption:GetY() - 48 - 10)
+	CommunityOption:SetText("")
+	CommunityOption.Paint = function(self, width, height)
+		surface.SetDrawColor(self:IsDown() and Color(100, 100, 100) or self:IsHovered() and Color(75, 75, 75) or Color(50, 50, 50))
+		surface.SetMaterial(communityMat)
+		surface.DrawTexturedRect(0, 0, width, height)
+	end
+	CommunityOption.DoClick = function()
+		EchoSound("button_click")
+
+		if (IsValid(settingsMenu)) then settingsMenu:Close(true) end
+		if (IsValid(reportMenu)) then reportMenu:Close(true) end
+		if (IsValid(creditsMenu)) then creditsMenu:Close(true) end
+
+		if (IsValid(communityMenu)) then
+			communityMenu:Close()
+		else
+			vgui.Create("echoCommunityMenu")
 		end
 	end
 
@@ -273,29 +336,30 @@ function PANEL:Init()
     local entryWidth = (panelWidth - padding * 2 - entryGap * (columns - 1)) / columns
     local panelHeight = padding * 2 + rows * entryHeight + (rows - 1) * entryGap
 
-    local playerListPanel = vgui.Create("DPanel", mainMenu:GetParent())
-    playerListPanel:SetSize(panelWidth, panelHeight)
-    playerListPanel:SetPos(mainMenu:GetX(), mainMenu:GetY() + mainMenu:GetTall() + 10)
-    playerListPanel.Paint = function(self, w, h)
+    self.playerListPanel = vgui.Create("DPanel", mainMenu:GetParent())
+    self.playerListPanel:SetSize(panelWidth, panelHeight)
+    self.playerListPanel:SetPos(mainMenu:GetX(), mainMenu:GetY() + mainMenu:GetTall() + 10)
+    self.playerListPanel:SetAlpha(0)
+    self.playerListPanel:AlphaTo(255, 0.5)
+    self.playerListPanel.Paint = function(self, w, h)
         surface.SetDrawColor(25, 25, 25)
         surface.DrawRect(0, 0, w, h)
         surface.SetMaterial(vignette)
         surface.DrawTexturedRect(0, 0, w, h)
     end
-    playerListPanel.Think = function(self)
+    self.playerListPanel.Think = function(self)
         if not IsValid(mainMenu) then self:Remove() return end
-        playerListPanel:SetAlpha(mainMenu:GetAlpha())
     end
 
     local function RefreshPlayerList()
-    	playerListPanel:Clear()
+    	self.playerListPanel:Clear()
 	    for i, ply in ipairs(players) do
 	        local col = (i - 1) % columns
 	        local row = math.floor((i - 1) / columns)
 	        local xPos = padding + col * (entryWidth + entryGap)
 	        local yPos = padding + row * (entryHeight + entryGap)
 
-	        local entry = vgui.Create("DPanel", playerListPanel)
+	        local entry = vgui.Create("DPanel", self.playerListPanel)
 	        entry:SetSize(entryWidth, entryHeight)
 	        entry:SetPos(xPos, yPos)
 	        entry.Paint = function(self, w, h)
@@ -459,9 +523,17 @@ end
 function PANEL:Close()
 	timer.Remove("echoesFetchStats")
 
+	local panel = self.playerListPanel
+
 	self:AlphaTo(0, 0.25, 0, function()
 		self:Remove()
 	end)
+
+	if (IsValid(panel)) then
+		panel:AlphaTo(0, 0.25, 0, function()
+			panel:Remove()
+		end)
+	end
 
 	if (IsValid(mapMenu)) then
 		mapMenu:Close(true)
@@ -479,13 +551,17 @@ function PANEL:Close()
 		creditsMenu:Close(true)
 	end
 
+	if (IsValid(communityMenu)) then
+		communityMenu:Close(true)
+	end
+
 	if (IsValid(personalEchoesMenu)) then
 		personalEchoesMenu:Close(true)
 	end
 
 	if (IsValid(pinnedEchoesMenu)) then
-        pinnedEchoesMenu:Close(true)
-    end
+	       pinnedEchoesMenu:Close(true)
+	   end
 
 	EchoSound("whoosh", 90, 0.75)
 

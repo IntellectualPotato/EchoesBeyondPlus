@@ -8,6 +8,8 @@ if (SERVER) then
 	hook.Add("KeyPress", "echoes_create_KeyPress", function(client, key)
 		if (key != IN_RELOAD) then return end
 		local bypass = GetConVar("echoes_bypasschecks"):GetBool()
+		local immersiveMode = GetConVar("echoes_immersivemode"):GetBool()
+		if immersiveMode then bypass = false end
 
         --prevent creating echoes while dead
         if client:Health() <= 0 then
@@ -65,16 +67,16 @@ else
 			return
 		end
 
-		local enableDrafts = GetConVar("echoes_enable_drafts"):GetBool()
-		if not enableDrafts then
-			if nextEcho > os.time() then
+		if nextEcho > os.time() then --Allow making echoes still if not on cooldown
+			local enableDrafts = GetConVar("echoes_enable_drafts"):GetBool()
+			if not enableDrafts then
 				EchoNotify("A good message bides its time. You must wait another " .. string.NiceTime(nextEcho - os.time()) .. " before creating a new Echo.")
 				return
-			end
-		else
-			if #drafts >= 3 then
-				EchoNotify("Reached the maximum of 3 drafts. delete a draft from Personal Echoes or wait")
-				return
+			else
+				if #drafts >= 3 then
+					EchoNotify("Reached the maximum of 3 drafts. delete a draft from Personal Echoes or wait")
+					return
+				end
 			end
 		end
 
@@ -82,11 +84,14 @@ else
 		createPos = client:GetPos() + Vector(0, 0, 32)
 
 		-- Prevent creating echoes too close to other echoes
+		local profanity = GetConVar("echoes_profanity"):GetBool()
 		for _, echo in ipairs(echoes) do
 			if echo.id == -1 and not echo.isDraft then continue end
-			if echo.explicit then continue end
 			if (createPos:Distance(echo.pos) >= 75) then continue end
-
+			if echo.explicit and not profanity then --Used to just not check if the echo was explicit
+				EchoNotify("A good message needs an identity of its own. You are too close to an Echo you cannot see.")
+				return
+			end
 			EchoNotify("A good message needs an identity of its own. You are too close to another Echo.")
 			return
 		end

@@ -145,7 +145,9 @@ local totalTabsWidth = 0
 		y = CreateCheckbox(pnl, "Don't fade read echoes", "echoes_disablereadsys", y)
 		y = CreateCheckbox(pnl, "Show offensive Echoes", "echoes_profanity", y)
 		y = CreateCheckbox(pnl, "Flash game window when a new Echo is created", "echoes_windowflash", y)
-		y = CreateCheckbox(pnl, "Notify when an echo is created on ANY map", "echoes_notifynew", y)
+		if not EchoesSettings["echoes_immersivemode"] then
+			y = CreateCheckbox(pnl, "Notify when an echo is created on ANY map", "echoes_notifynew", y)
+		end
 	end
 
 	do
@@ -167,6 +169,7 @@ local totalTabsWidth = 0
 		y = y + 5
 		y = CreateSlider(pnl, "Render Distance", GetConVar("echoes_renderdist"), 10000, 100000000, 0, y)
 		y = y + 5
+		y = CreateCheckbox(pnl, "Slow Echo activation", "echoes_slowactivate", y)
 		y = CreateCheckbox(pnl, "Hide author signatures", "echoes_disablesigning", y)
 		y = y + 25
 		y = CreateCheckbox(pnl, "Draw Hud", "cl_drawhud", y)
@@ -179,6 +182,18 @@ local totalTabsWidth = 0
 		local y = 20
 		local pnl = tabPanels[4]
 
+		local ImmersionLabel = vgui.Create("DLabel", pnl)
+		ImmersionLabel:SetText("⬇ Hide's/disables options that may be considered \"Cheaty\" or immersion breaking.")
+		ImmersionLabel:SetFont("Echoes_statsfont")
+		ImmersionLabel:SetColor(Color(105, 105, 200))
+		ImmersionLabel:SizeToContents()
+		ImmersionLabel:SetPos(50, y)
+		y = y + ImmersionLabel:GetTall() + 5
+
+		y = CreateCheckbox(pnl, "Immersive Mode", "echoes_immersivemode", y)
+
+		y = y + 10
+
 		local SandboxLabel = vgui.Create("DLabel", pnl)
 		SandboxLabel:SetText("⬇ May be buggy, use with caution")
 		SandboxLabel:SetFont("Echoes_statsfont")
@@ -190,8 +205,10 @@ local totalTabsWidth = 0
 		y = CreateCheckbox(pnl, "Inject Sandbox Functions (Spawnmenu, etc, Requires mapchange)", "echoes_allowsandbox", y)
 		y = y + 20
 
-		y = CreateCheckbox(pnl, "Bypass placement checks (void, ground, etc)", "echoes_bypasschecks", y)
-		y = CreateCheckbox(pnl, "Debug info", "echoes_debuginfo", y)
+		if not EchoesSettings["echoes_immersivemode"] then
+			y = CreateCheckbox(pnl, "Bypass placement checks (void, ground, etc)", "echoes_bypasschecks", y)
+			y = CreateCheckbox(pnl, "Debug info", "echoes_debuginfo", y)
+		end
 
 		local deleteAll = vgui.Create("DButton", pnl)
 		deleteAll:SetSize(pnl:GetWide() * 0.5, 30)

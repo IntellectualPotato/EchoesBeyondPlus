@@ -396,7 +396,7 @@ function FetchStats()
 			end
 		end
 
-		if EchoesSettings["echoes_notifynew"] then
+		if EchoesSettings["echoes_notifynew"] and not EchoesSettings["echoes_immersivemode"] then
 			local newMaps = data.maps
 			if newMaps then
 				--check if this is the first time we're fetching the stats
