@@ -7,6 +7,7 @@ Includes:
 * A couple extra settings
 * Map list filters (installed, uninstalled, echoed on/not echoed)
 * Map list shows your personal echoes next to the global echoes count
+* Community menu, Listing a wall of people who have contributed to the community
 * More verbose info in the tab menu
 * "Scary" mode for fun (makes map dark, new 'music'), Requires [Gmod Light / Environment Editor](https://steamcommunity.com/sharedfiles/filedetails/?id=2779451924)
 * Echoes follow the cameras height to help with vents being annoying
