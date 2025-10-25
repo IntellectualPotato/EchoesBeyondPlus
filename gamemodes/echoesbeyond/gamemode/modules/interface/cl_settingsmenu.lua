@@ -128,7 +128,7 @@ function PANEL:Init()
 		panel:SetSize(self:GetWide(), 1000) --height for content
 		panel.Paint = function() end --inner panel transparent too
 		scrollPanel:AddItem(panel)
-		tabPanels[i] = panel
+		tabPanels[i] = scrollPanel
 	end
 
 	local function SwitchToTab(index)
@@ -266,8 +266,7 @@ local totalTabsWidth = 0
 		deleteAll:SetText("Delete all data")
 		deleteAll:SetFont("CreditsText")
 		deleteAll:SetColor(Color(175, 175, 175))
-		deleteAll:CenterHorizontal()
-		deleteAll:SetY(pnl:GetTall() - 50)
+		deleteAll:SetPos((pnl:GetWide() - deleteAll:GetWide()) / 2, 1000 - 50)
 		deleteAll.Paint = function(this, width, height)
 			surface.SetDrawColor(this:IsDown() and Color(100, 100, 100) or this:IsHovered() and Color(75, 75, 75) or Color(50, 50, 50))
 			surface.DrawRect(0, 0, width, height)
@@ -323,8 +322,7 @@ local totalTabsWidth = 0
 			ForceParty:SetText("Force party mode")
 			ForceParty:SetFont("CreditsText")
 			ForceParty:SetColor(Color(175, 175, 175))
-			ForceParty:CenterHorizontal()
-			ForceParty:SetY(pnl:GetTall() - 100)
+			ForceParty:SetPos((pnl:GetWide() - ForceParty:GetWide()) / 2, 1000 - 100)
 			ForceParty.Paint = function(this, width, height)
 				surface.SetDrawColor(this:IsDown() and Color(100, 100, 100) or this:IsHovered() and Color(75, 75, 75) or Color(50, 50, 50))
 				surface.DrawRect(0, 0, width, height)

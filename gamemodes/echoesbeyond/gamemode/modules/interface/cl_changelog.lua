@@ -2,7 +2,7 @@
 -- A simple changelog menu
 local PANEL = {}
 local vignette = Material("echoesbeyond/vignette.png")
-local changelogID = "ebplusScreenResoFix"
+local changelogID = "ebplusScreenResoFix_optionsfix"
 
 function PANEL:Init()
 	if (IsValid(changeLog)) then
