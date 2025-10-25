@@ -22,3 +22,17 @@ alt + e while reading an echo to open the pin/translate options, you have to hol
 ~~recommended to make a backup of your readechoes.txt in your garrysmod/data/echoesbeyond folder, as this version will convert it to a new format that does not work and breaks the original mod.~~
 
 edit: The mod now saves/converts to a separate readechoes_plus.txt, that doesn't interfere with the original, do note reading echoes with this fork doesn't add to the original mod's readechoes!
+
+# How to install
+Firstly, disable the original addon in-game, as this is a fork, it uses much of the same code
+
+In steam, right click garry's mod and press "Properties", navigate to "Installed files" from the sidebar, and press "Browse"
+Navigate to the addon's folder (GarrysMod\garrysmod\addons)
+
+Unzip the code downloaded from here into the addons folder, Or git clone into the addons folder, the folder should directly lead to the asset folders and not another sub-folder (gamemodes/lua/materials/etc)
+Restart/Launch GMod
+
+You should now have an Echoes beyond plus selectable in the gamemodes!
+If it still shows as normal echoes: Beyond, you may not have disabled the original addon or restarted
+
+To update, simply repeat the steps above, replacing the files, Or git pull from inside the EB+ folder to update
