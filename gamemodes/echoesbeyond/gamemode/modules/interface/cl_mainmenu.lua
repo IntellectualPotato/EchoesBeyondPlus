@@ -478,37 +478,101 @@ function PANEL:Paint(width, height)
 	if globalEchoCount > 0 then
 		percentage = math.Round((#writtenEchoes / globalEchoCount) * 100, 2)
 	end
-	if not EchoesOnMaps[game.GetMap()] then draw.SimpleText("LOADING", "DermaLarge", width / 2, height - 120, Color(180, 180, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER) return end
-	draw.SimpleText("You represent " .. percentage .. "% of the total echoes.", "DermaDefault", width / 2, height - 120, Color(180, 180, 180), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 
-	surface.SetFont("Echoes_statsfont")
-	local prefix = "There " .. (echoCount == 1 and "is" or "are") .. " currently " .. echoCount .. " echo" .. (echoCount == 1 and "" or "es") .. " on this map. You have read "
-	local suffix = " of them."
+	local function wrapColoredText(segments, maxWidth, font)
+		surface.SetFont(font)
+		local lines = {}
+		local currentLine = {}
+		local currentWidth = 0
+
+		for _, segment in ipairs(segments) do
+			local words = string.Explode(" ", segment.text)
+			for wordIndex, word in ipairs(words) do
+				local testWidth = currentWidth
+				if #currentLine > 0 then
+					testWidth = testWidth + surface.GetTextSize(" ")
+				end
+				testWidth = testWidth + surface.GetTextSize(word)
+
+				if testWidth > maxWidth and #currentLine > 0 then
+					--line full, add current line to lines
+					table.insert(lines, currentLine)
+					currentLine = {{text = word, color = segment.color}}
+					currentWidth = surface.GetTextSize(word)
+				else
+					if #currentLine > 0 then
+						currentWidth = currentWidth + surface.GetTextSize(" ")
+					end
+					table.insert(currentLine, {text = word, color = segment.color})
+					currentWidth = currentWidth + surface.GetTextSize(word)
+				end
+			end
+		end
+
+		if #currentLine > 0 then
+			table.insert(lines, currentLine)
+		end
+
+		return lines
+	end
+
+	local font = self.statsFont or "Echoes_statsfont"
+	local maxWidth = width - 116
+	local lineHeight = draw.GetFontHeight(font)
+
+	if not EchoesOnMaps[game.GetMap()] then
+		draw.SimpleText("LOADING", "DermaLarge", width / 2, height - 120, Color(180, 180, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		return
+	end
+
+	--colored segments for progress text
+	local progressSegments = {
+		{text = "There " .. (echoCount == 1 and "is" or "are") .. " currently " .. echoCount .. " echo" .. (echoCount == 1 and "" or "es") .. " on this map. You have read ", color = self.colorStats1}
+	}
 	local progressTbl = CreateProgressColorTable(readEchoCount, echoCount)
-
-	local prefix_w, _ = surface.GetTextSize(prefix)
-	local suffix_w, _ = surface.GetTextSize(suffix)
-	local progress_w = 0
 	for _, v in ipairs(progressTbl) do
-		local w, _ = surface.GetTextSize(v.text)
-		progress_w = progress_w + w
+		table.insert(progressSegments, {text = v.text, color = v.color})
 	end
-	local total_w = prefix_w + progress_w + suffix_w
-	local start_x = (width / 2) - (total_w / 2)
+	table.insert(progressSegments, {text = " of them.", color = self.colorStats1})
 
-	draw.SimpleText(prefix, "Echoes_statsfont", start_x, height - 90, self.colorStats1, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-	start_x = start_x + prefix_w
+	local personalText = "You have written " .. #writtenEchoes .. " echo" .. (#writtenEchoes == 1 and "" or "es") .. " across " .. self.ownMapCount .. (self.ownMapCount == 1 and " map." or " different maps. and " .. EchoesOnMaps[game.GetMap()] .. " on this map.")
+	local globalText = "There are currently " .. globalEchoCount .. " total echoes across " .. mapCount .. " different maps from " .. userCount .. " different users."
 
-	for _, v in ipairs(progressTbl) do
-		draw.SimpleText(v.text, "Echoes_statsfont", start_x, height - 90, v.color, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-		local w, _ = surface.GetTextSize(v.text)
-		start_x = start_x + w
+	local textData = {
+		{segments = {{text = "You represent " .. percentage .. "% of the total echoes.", color = Color(180, 180, 180)}}},
+		{segments = progressSegments},
+		{segments = {{text = personalText, color = Color(200, 200, 200)}}},
+		{segments = {{text = globalText, color = self.colorStats3}}}
+	}
+
+	local allLines = {}
+	for _, data in ipairs(textData) do
+		local lines = wrapColoredText(data.segments, maxWidth, font)
+		for _, line in ipairs(lines) do
+			table.insert(allLines, line)
+		end
 	end
 
-	draw.SimpleText(suffix, "Echoes_statsfont", start_x, height - 90, self.colorStats1, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+	local totalHeight = #allLines * lineHeight
+	local startY = height - totalHeight
 
-	draw.SimpleText("You have written " .. #writtenEchoes .. " echo" .. (#writtenEchoes == 1 and "" or "es") .. " across " .. self.ownMapCount .. (self.ownMapCount == 1 and " map." or " different maps. and " .. EchoesOnMaps[game.GetMap()] .. " on this map."), "Echoes_statsfont", width / 2, height - 60, Color(200, 200, 200), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-	draw.SimpleText("There are currently " .. globalEchoCount .. " total echoes across " .. mapCount .. " different maps from " .. userCount .. " different users.", "Echoes_statsfont", width / 2, height - 30, self.colorStats3, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+	for i, line in ipairs(allLines) do
+		local y = startY + (i-1) * lineHeight
+		local lineWidth = 0
+		for _, segment in ipairs(line) do
+			lineWidth = lineWidth + surface.GetTextSize(segment.text)
+		end
+		lineWidth = lineWidth + surface.GetTextSize(" ") * (#line - 1)
+
+		local startX = (width / 2) - (lineWidth / 2)
+		for j, segment in ipairs(line) do
+			draw.SimpleText(segment.text, font, startX, y, segment.color, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+			startX = startX + surface.GetTextSize(segment.text)
+			if j < #line then
+				startX = startX + surface.GetTextSize(" ")
+			end
+		end
+	end
 
 	self.colorStats1 = LerpColor(frameTime, self.colorStats1, Color(200, 200, 200))
 	self.colorStats3 = LerpColor(frameTime, self.colorStats3, Color(200, 200, 200))

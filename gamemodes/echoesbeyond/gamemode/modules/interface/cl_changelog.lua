@@ -2,7 +2,7 @@
 -- A simple changelog menu
 local PANEL = {}
 local vignette = Material("echoesbeyond/vignette.png")
-local changelogID = "ebplusCommunityMenu"
+local changelogID = "ebplusScreenResoFix"
 
 function PANEL:Init()
 	if (IsValid(changeLog)) then
@@ -53,15 +53,10 @@ function PANEL:Init()
 	end
 
 	changelog:SetText([[
-		- Actually started using the changelog system for EB+ (Hello!!)
-		- Added github update checking, update available button
-		- Added a "Community" menu, has names of people from EB community
-		- Added EB+ credits to credits menu for used assets
-		- Added "Slow activate" echo sound and option
-		- Added "Immersion Mode" option to disable cheaty things, on by default
-		- Fixed "profanity" echoes not checking distance for echo creation
-		- Fixed echoes not being able to be made due to max drafts, even off cooldown
-		- Tried to Fix player list not being same alpha as main menu when spamming tab
+		- Adjusted multiple places in code to try and support low-res monitors more
+		- Related to above: Added scrollbar to community and options menu to help
+		- Related: Made map list filters be a separate floating panel too
+		- Note: Some text still may over-flow, important main menu ones *should* be resolved
 	]])
 
 	local close = vgui.Create("DButton", self)

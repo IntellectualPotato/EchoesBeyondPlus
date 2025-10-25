@@ -4,8 +4,8 @@ local flatgrassGrey, flatgrassColor, fgWidth, fgHeight = Material("echoesbeyond/
 
 local y = 80
 
-local function AddHeader(text)
-	local header = vgui.Create("DLabel", creditsMenu)
+local function AddHeader(text, parent)
+	local header = vgui.Create("DLabel", parent or creditsMenu)
 	header:SetText(text)
 	header:SetFont("DermaDefaultBold")
 	header:SizeToContents()
@@ -14,21 +14,22 @@ local function AddHeader(text)
 	y = y + 30
 end
 
-local function AddCredit(text1, text2)
-	local label1 = vgui.Create("DLabel", creditsMenu)
+local function AddCredit(text1, text2, parent)
+	local label1 = vgui.Create("DLabel", parent or creditsMenu)
 	label1:SetText(text1)
 	label1:SizeToContents()
 	label1:SetPos(30, y)
 
-	local label2 = vgui.Create("DLabel", creditsMenu)
+	local label2 = vgui.Create("DLabel", parent or creditsMenu)
 	label2:SetText(text2)
 	label2:SizeToContents()
-	label2:SetPos(creditsMenu:GetWide() - 30 - label2:GetWide(), y)
+	label2:SetPos((parent or creditsMenu):GetWide() - 30 - label2:GetWide(), y)
 
 	y = y + 20
 end
 
 local PANEL = {}
+local lastOpenedTab = 1
 
 function PANEL:Init()
 	if (IsValid(creditsMenu)) then
@@ -36,11 +37,11 @@ function PANEL:Init()
 	end
 
 	creditsMenu = self
-	y = 80
+	y = 20
 
 	self.flatgrassSaturation = 0
 
-	self:SetSize(ScrW() / 4, ScrH() / 1.5)
+	self:SetSize(ScrW() / 3.5, ScrH() / 1.3)
 	self:Center()
 	self:SetX(mainMenu:GetX() + mainMenu:GetWide() + 10)
 	self:MakePopup()
@@ -56,35 +57,115 @@ function PANEL:Init()
 	title:CenterHorizontal()
 	title:SetY(20)
 
-	AddHeader("Echoes: Beyond")
-	AddCredit("Max Payne 1 (Remedy)", "Notification Sound")
-	AddCredit("Catherine (L7D)", "Menu Movement Sound")
-	AddCredit("PlayStation 2 (Sony Computer Entertainment)", "Echo Sounds")
-	AddCredit("Exo One (Exbleative)", "Background Music")
-	AddCredit("Clockwork (CloudSixteen)", "Vignette Texture")
-	AddCredit("Gabe Newell (Valve Software)", "GabeN Mode Sounds")
-	AddCredit("Kevin MacLeod", "Party Song")
-	AddCredit("Aspect™", "Clientside Development, Original addon")
-	AddCredit("Pancakes", "Serverside Development")
-	AddCredit("Kaz", "Performance Improvements")
-	AddCredit("Friends", "Feedback, ideas, support, and testing")
-	AddCredit("Bad Actors", "Valuable web security experience")
+	local subTitle = vgui.Create("DLabel", self)
+	subTitle:SetText("Special thanks to everyone who contributed!")
+	subTitle:SizeToContents()
+	subTitle:CenterHorizontal()
+	subTitle:SetY(55)
 
-	AddHeader("Echoes: Beyond Plus")
-	AddCredit("IntellectualPotato", "Fork creation")
-	AddCredit("The Beginner's Guide (Everything Unlimited Ltd.)", "TBG Skin skin/sounds")
-	AddCredit("DELTARUNE / UNDERTALE (Toby Fox)", "UTDR Skin base/sounds")
-	AddCredit("Friends(+)", "Testing, Ideas, Being there when i need them ♥")
+	local tabNames = {"Echoes: Beyond", "Echoes: Beyond Plus"}
+	local tabButtons = {}
+	local tabPanels = {}
+	local tabStartY = 90
+	local tabHeight = 30
+	local tabContentY = tabStartY + tabHeight
 
-	AddHeader("(EB+) ScaryMode Songs/Ambience")
+	for i, name in ipairs(tabNames) do
+		local panel = vgui.Create("DPanel", self)
+		panel:SetPos(0, tabContentY)
+		panel:SetSize(self:GetWide(), self:GetTall() - tabContentY)
+		panel.Paint = function() end
+		tabPanels[i] = panel
+	end
 
-	AddCredit("Amnesia: The Dark Descent (Frictional Games)", "Songs/Ambience")
-	AddCredit("OMORI (OMOCAT)", "Songs/Ambience")
-	AddCredit("OneShot (Future Cat)", "Songs/Ambience")
-	AddCredit("Piglet's Big Game (Doki Denki Studio / Disney Interactive)", "Songs/Ambience")
-	AddCredit("Yume Nikki (Kikiyama)", "Songs/Ambience")
-	AddCredit("Yume 2kki (Yume 2kki Team)", "Songs/Ambience")
-	AddCredit("Undertale Yellow (Team Undertale Yellow)", "Songs/Ambience")
+	local function SwitchToTab(index)
+		lastOpenedTab = index
+		for i, panel in ipairs(tabPanels) do
+			panel:SetVisible(i == index)
+		end
+		for i, button in ipairs(tabButtons) do
+			button.m_bActive = (i == index)
+		end
+	end
+
+	local totalTabsWidth = 0
+	local buttonSpacing = 2
+	for i, name in ipairs(tabNames) do
+		local button = vgui.Create("DButton", self)
+		button:SetText(name)
+		button:SetFont("TargetID")
+		button:SizeToContentsX(15)
+		button:SetTall(tabHeight)
+		button.m_bActive = false
+
+		button.Paint = function(s, w, h)
+			if s.m_bActive then
+				surface.SetDrawColor(28, 40, 40)
+				surface.DrawRect(0, 0, w, h)
+			else
+				surface.SetDrawColor(s:IsDown() and Color(100, 100, 100) or s:IsHovered() and Color(75, 75, 75) or Color(50, 50, 50))
+				surface.DrawRect(0, 0, w, h)
+			end
+		end
+
+		button.DoClick = function()
+			SwitchToTab(i)
+			EchoSound("button_click")
+		end
+
+		tabButtons[i] = button
+		totalTabsWidth = totalTabsWidth + button:GetWide()
+	end
+
+	if #tabButtons > 1 then
+		totalTabsWidth = totalTabsWidth + (#tabButtons - 1) * buttonSpacing
+	end
+
+	local currentX = (self:GetWide() - totalTabsWidth) / 2
+	for i, button in ipairs(tabButtons) do
+		button:SetPos(currentX, tabStartY)
+		currentX = currentX + button:GetWide() + buttonSpacing
+	end
+
+	do
+		local y = 20
+		local pnl = tabPanels[1]
+		AddHeader("Echoes: Beyond", pnl)
+		AddCredit("Max Payne 1 (Remedy)", "Notification Sound", pnl)
+		AddCredit("Catherine (L7D)", "Menu Movement Sound", pnl)
+		AddCredit("PlayStation 2 (Sony Computer Entertainment)", "Echo Sounds", pnl)
+		AddCredit("Exo One (Exbleative)", "Background Music", pnl)
+		AddCredit("Clockwork (CloudSixteen)", "Vignette Texture", pnl)
+		AddCredit("Gabe Newell (Valve Software)", "GabeN Mode Sounds", pnl)
+		AddCredit("Kevin MacLeod", "Party Song", pnl)
+		AddCredit("Aspect™", "Clientside Development, Original addon", pnl)
+		AddCredit("Pancakes", "Serverside Development", pnl)
+		AddCredit("Kaz", "Performance Improvements", pnl)
+		AddCredit("Friends", "Feedback, ideas, support, and testing", pnl)
+		AddCredit("Bad Actors", "Valuable web security experience", pnl)
+	end
+
+	do
+		y = 20
+		local pnl = tabPanels[2]
+		AddHeader("Echoes: Beyond Plus", pnl)
+		AddCredit("IntellectualPotato", "Fork creation", pnl)
+		AddCredit("The Beginner's Guide (Everything Unlimited Ltd.)", "TBG Skin skin/sounds", pnl)
+		AddCredit("DELTARUNE / UNDERTALE (Toby Fox)", "UTDR Skin base/sounds", pnl)
+		AddCredit("Friends(+)", "Testing, Ideas, Being there when i need them ♥", pnl)
+
+		AddHeader("(EB+) ScaryMode Songs/Ambience", pnl)
+
+		AddCredit("Amnesia: The Dark Descent (Frictional Games)", "Songs/Ambience", pnl)
+		AddCredit("OMORI (OMOCAT)", "Songs/Ambience", pnl)
+		AddCredit("OneShot (Future Cat)", "Songs/Ambience", pnl)
+		AddCredit("Piglet's Big Game (Doki Denki Studio / Disney Interactive)", "Songs/Ambience", pnl)
+		AddCredit("Yume Nikki (Kikiyama)", "Songs/Ambience", pnl)
+		AddCredit("Yume 2kki (Yume 2kki Team)", "Songs/Ambience", pnl)
+		AddCredit("Undertale Yellow (Team Undertale Yellow)", "Songs/Ambience", pnl)
+	end
+
+	SwitchToTab(lastOpenedTab)
 
 
 
@@ -109,8 +190,9 @@ function PANEL:Init()
 		surface.SetMaterial(flatgrassColor)
 		surface.DrawTexturedRect(0, 0, width, height)
 
-		draw.SimpleText("Hosting & Server Development", "DermaLarge", width / 2, height - 100, Color(200, 200, 200), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-		draw.SimpleText("Kindly provided by Flatgrass.net", "DermaLarge", width / 2, height - 60, Color(200, 200, 200), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		local textY = math.max(20, height - 100)
+		draw.SimpleText("Hosting & Server Development", "DermaLarge", width / 2, textY, Color(200, 200, 200), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		draw.SimpleText("Kindly provided by Flatgrass.net", "DermaLarge", width / 2, textY + 40, Color(200, 200, 200), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 	end
 	flatgrassPanel.DoClick = function()
 		gui.OpenURL("https://github.com/flatgrassdotnet/")

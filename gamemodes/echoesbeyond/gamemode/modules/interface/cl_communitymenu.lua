@@ -2,6 +2,7 @@ local vignette = Material("echoesbeyond/vignette.png", "smooth")
 local notif = Material("echoesbeyond/notification.png")
 local communityMat = Material("echoesbeyond/community.png", "smooth")
 local echoMat = Material("echoesbeyond/echo.png", "smooth")
+local arrow = Material("echoesbeyond/echo_arrow.png", "smooth")
 
 local PARTICLE_SIZE = 42
 local y = 80
@@ -20,67 +21,6 @@ local function AddText(text, menu)
 	end
 end
 
-local function AddRow(name1, name2, name3, menu)
-	local rowPanel = vgui.Create("DPanel", menu)
-	rowPanel:SetSize(menu:GetWide() - 40, 30)
-	rowPanel:SetPos(20, y)
-	rowPanel:SetAlpha(0)
-	rowPanel:AlphaTo(255, 0.5 + (fadeCounter / 3 * 0.5), fadeCounter * 0.1)
-	fadeCounter = fadeCounter + 1
-	rowPanel.Paint = function() end
-
-	local names = {name1, name2, name3}
-	local nameWidth = (rowPanel:GetWide() - 20) / 3
-
-	for i, name in ipairs(names) do
-		if name and name ~= "" then
-			--backdrop
-			local backdrop = vgui.Create("DPanel", rowPanel)
-			backdrop:SetSize(nameWidth - 10, 30)
-			backdrop:SetPos((i-1) * nameWidth + 5, 2.5)
-			backdrop.Paint = function(this, width, height)
-				surface.SetDrawColor(50, 50, 50, 150)
-				surface.SetMaterial(notif)
-				surface.DrawTexturedRect(0, 0, width, height)
-			end
-
-			local label = vgui.Create("DLabel", backdrop)
-			label:SetText(name)
-			label:SetFont("DermaLarge")
-			label:SizeToContents()
-			if label:GetWide() > backdrop:GetWide() then
-				label:SetFont("DermaDefaultBold")
-				label:SizeToContents()
-				if label:GetWide() > backdrop:GetWide() then
-					label:SetText(string.sub(name, 1, 15) .. "...")
-					label:SizeToContents()
-				end
-			end
-			label:Center()
-		end
-	end
-
-	--vertical separators between names (2 per row)
-	local sep1 = vgui.Create("DPanel", rowPanel)
-	sep1:SetSize(5, 30)
-	sep1:SetPos(nameWidth - 1, 2.5)
-	sep1.Paint = function(this, width, height)
-		surface.SetDrawColor(100, 120, 120)
-		surface.SetMaterial(notif)
-		surface.DrawTexturedRect(0, 0, width, height)
-	end
-
-	local sep2 = vgui.Create("DPanel", rowPanel)
-	sep2:SetSize(5, 30)
-	sep2:SetPos(nameWidth * 2 - 1, 2.5)
-	sep2.Paint = function(this, width, height)
-		surface.SetDrawColor(100, 120, 120)
-		surface.SetMaterial(notif)
-		surface.DrawTexturedRect(0, 0, width, height)
-	end
-
-	y = y + 35
-end
 
 local function AddSeparator(menu)
 	local sep = vgui.Create("DPanel", menu)
@@ -132,6 +72,7 @@ function PANEL:Init()
 	end
 	particlesPanel.Think = function(this)
 		local panelHeight = this:GetTall()
+		local panelWidth = this:GetWide()
 		local fadeInDuration = 15
 
 		for _, particle in ipairs(this.particles) do
@@ -142,8 +83,10 @@ function PANEL:Init()
 			local fadeInProgress = math.min(1, timeSinceReset / fadeInDuration)
 
 			--calculate fade out progress
-			local fadeStart = panelHeight - 300
-			local fadeEnd = 500
+			local fadeStartPercent = 0.8 --80% down the panel
+			local fadeEndPercent = 0.3 --fade completely by 30% down
+			local fadeStart = panelHeight * fadeStartPercent
+			local fadeEnd = panelHeight * fadeEndPercent
 			local fadeOutProgress = 0
 			if particle.y < fadeStart then
 				fadeOutProgress = (fadeStart - particle.y) / (fadeStart - fadeEnd)
@@ -153,11 +96,13 @@ function PANEL:Init()
 			particle.alpha = 255 * fadeInProgress * (1 - fadeOutProgress)
 
 			--reset to bottom when reaching top
+			local resetStartPercent = 0.7
 			if particle.y < fadeEnd then
-				local newX = math.random(0, this:GetWide() - PARTICLE_SIZE)
+				local newX = math.random(0, panelWidth - PARTICLE_SIZE * particle.scale)
+				local resetStart = panelHeight * resetStartPercent
 				particle.x = newX
-				particle.y = math.random(panelHeight - 500, panelHeight)
-				particle.resetTime = CurTime() --i forgot curtime exists, dying
+				particle.y = math.random(resetStart, panelHeight)
+				particle.resetTime = CurTime()
 				particle.color = math.random(1, 4) == 1 and Color(100, 100, 100) or Color(150, 255, 255)
 				particle.scale = math.random(75, 115) / 100 --0.75x to 1.15x
 			end
@@ -171,9 +116,10 @@ function PANEL:Init()
 	local panelHeight = particlesPanel:GetTall()
 
 	for i = 1, numParticles do
+		local resetStart = panelHeight * 0.7 --70% of panel height
 		local particle = {
 			x = math.random(0, panelWidth - PARTICLE_SIZE),
-			y = math.random(panelHeight - 500, panelHeight),
+			y = math.random(resetStart, panelHeight),
 			alpha = 0,
 			speed = math.random(15, 50) / 100, --slow float up, like a dead fish in a fishtank :pensive:
 			color = math.random(1, 4) == 1 and Color(100, 100, 100) or Color(150, 255, 255), --1 in 4 chance for read, else unread
@@ -192,7 +138,7 @@ function PANEL:Init()
 
 	--Global read counts tracker to see how much time you've wasted reading echoes hehe
 	local readText = vgui.Create("DLabel", self)
-	readText:SetText("You have read " .. #ReadEchoes() .. " Echoes from this amazing community, That's " .. (globalEchoCount > 0 and math.Round((#ReadEchoes() / globalEchoCount) * 100, 2) or 0) .. "% of all echoes!")	
+	readText:SetText("You have read " .. #ReadEchoes() .. " Echoes from the community, That's " .. (globalEchoCount > 0 and math.Round((#ReadEchoes() / globalEchoCount) * 100, 2) or 0) .. "% of all echoes!")	
 	readText:SetFont("DermaDefaultBold")
 	readText:SizeToContents()
 	readText:CenterHorizontal()
@@ -202,29 +148,125 @@ function PANEL:Init()
 
 	AddSeparator(self)
 
+	-- scrollable panel for names
+	local namesScrollPanel = vgui.Create("DScrollPanel", self)
+	namesScrollPanel:SetSize(self:GetWide() - 40, self:GetTall() * 0.7 - y - 10)
+	namesScrollPanel:SetPos(20, y)
+	namesScrollPanel.Paint = function(this, width, height)
+		surface.SetDrawColor(0, 0, 0, 50)
+		surface.DrawRect(0, 0, width, height)
+	end
+	local sbar = namesScrollPanel:GetVBar()
+	function sbar:Paint(w, h)
+		draw.RoundedBox(0, 0, 0, w, h, Color(25, 25, 25, 150))
+	end
+	function sbar.btnUp:Paint(w, h)
+		surface.SetDrawColor(100, 100, 100)
+		surface.SetMaterial(arrow)
+		surface.DrawTexturedRectRotated(w / 2, h / 2, w * 1.5, h * 1.5, 0)
+	end
+	function sbar.btnDown:Paint(w, h)
+		surface.SetDrawColor(100, 100, 100)
+		surface.SetMaterial(arrow)
+		surface.DrawTexturedRectRotated(w / 2, h / 2, w * 1.5, h * 1.5, 180)
+	end
+	function sbar.btnGrip:Paint(w, h)
+		draw.RoundedBox(0, 0, 0, w, h, Color(75, 75, 75))
+		surface.SetDrawColor(0, 0, 0, 255)
+		surface.SetMaterial(vignette)
+		surface.DrawTexturedRect(0, 0, w, h)
+	end
+
+	local namesY = 0
+	local function AddRowToScroll(name1, name2, name3)
+		local rowPanel = vgui.Create("DPanel", namesScrollPanel)
+		rowPanel:SetSize(namesScrollPanel:GetWide() - 20, 30)
+		rowPanel:SetPos(10, namesY)
+		rowPanel:SetAlpha(0)
+		rowPanel:AlphaTo(255, 0.5 + (fadeCounter / 3 * 0.5), fadeCounter * 0.1)
+		fadeCounter = fadeCounter + 1
+		rowPanel.Paint = function() end
+
+		local names = {name1, name2, name3}
+		local nameWidth = rowPanel:GetWide() / 3
+
+		for i, name in ipairs(names) do
+			if name and name ~= "" then
+				--backdrop
+				local backdrop = vgui.Create("DPanel", rowPanel)
+				backdrop:SetSize(nameWidth - 10, 30)
+				backdrop:SetPos((i-1) * nameWidth + 5, 2.5)
+				backdrop.Paint = function(this, width, height)
+					surface.SetDrawColor(50, 50, 50, 150)
+					surface.SetMaterial(notif)
+					surface.DrawTexturedRect(0, 0, width, height)
+				end
+
+				local label = vgui.Create("DLabel", backdrop)
+				label:SetText(name)
+				label:SetFont("DermaLarge")
+				label:SizeToContents()
+				if label:GetWide() > backdrop:GetWide() then
+					label:SetFont("DermaDefaultBold")
+					label:SizeToContents()
+					if label:GetWide() > backdrop:GetWide() then
+						label:SetText(string.sub(name, 1, 15) .. "...")
+						label:SizeToContents()
+					end
+				end
+				label:Center()
+			end
+		end
+
+		--vertical separators between names (2 per row)
+		local sep1 = vgui.Create("DPanel", rowPanel)
+		sep1:SetSize(5, 30)
+		sep1:SetPos(nameWidth - 1, 2.5)
+		sep1.Paint = function(this, width, height)
+			surface.SetDrawColor(100, 120, 120)
+			surface.SetMaterial(notif)
+			surface.DrawTexturedRect(0, 0, width, height)
+		end
+
+		local sep2 = vgui.Create("DPanel", rowPanel)
+		sep2:SetSize(5, 30)
+		sep2:SetPos(nameWidth * 2 - 1, 2.5)
+		sep2.Paint = function(this, width, height)
+			surface.SetDrawColor(100, 120, 120)
+			surface.SetMaterial(notif)
+			surface.DrawTexturedRect(0, 0, width, height)
+		end
+
+		namesY = namesY + 35
+	end
+
 	--   m any    names .. . . subjective of course, this is just ones ive found/remembered as i was doing this, may update ofc, order means nothing
-	AddRow("Muffin", "Salithin", "Lafta", self)
-	AddRow("Shimmer", "Aether", "Tomi", self)
-	AddRow("Sevvii", "Vladimir Plazovich", "Amtias", self)
-	AddRow("Kaz", "Mari", "Cheese eater", self)
-	AddRow("CNate", "InfiniteArchive", "Skolli", self)
-	AddRow("LordOfGeckos (Gecko)", "Funky493", "nathan51310", self)
-	AddRow("R. Rivers", "XG417", "Randomly Initialed girl (Lucy)", self)
-	AddRow("Fluman", "Vivian", "Derra", self)
-	AddRow("Dodeca", "Nelymi Ruxspin (N.R.)", "Den4ik17", self)
-	AddRow("Hazmat141", "EchoBlu", "On The Run!", self)
-	AddRow("Pix", "redfoxlol", "Panton_CLEO", self)
-	AddRow("Chlebiri", "\"Golf\" Guy", "Fluffy A", self)
-	AddRow("Xlutch", "#LNG1LND", "Artanis", self)
-	AddRow("Potion", "Misty_Bun", "Knaurl", self)
-	AddRow("AnonBW", "hazxyte", "Akari", self)
-	AddRow("KABLUEE2", "GMod Explorer", "", self)
+	AddRowToScroll("Muffin", "Salithin", "Lafta")
+	AddRowToScroll("Shimmer", "Aether", "Tomi")
+	AddRowToScroll("Sevvii", "Vladimir Plazovich", "Amtias")
+	AddRowToScroll("Kaz", "Mari", "Cheese eater")
+	AddRowToScroll("CNate", "InfiniteArchive", "Skolli")
+	AddRowToScroll("LordOfGeckos (Gecko)", "Funky493", "nathan51310")
+	AddRowToScroll("R. Rivers", "XG417", "Randomly Initialed girl (Lucy)")
+	AddRowToScroll("Fluman", "Vivian", "Derra")
+	AddRowToScroll("Dodeca", "Nelymi Ruxspin (N.R.)", "Den4ik17")
+	AddRowToScroll("Hazmat141", "EchoBlu", "On The Run!")
+	AddRowToScroll("Pix", "redfoxlol", "Panton_CLEO")
+	AddRowToScroll("Chlebiri", "\"Golf\" Guy", "Fluffy A")
+	AddRowToScroll("Xlutch", "#LNG1LND", "Artanis")
+	AddRowToScroll("Potion", "Misty_Bun", "Knaurl")
+	AddRowToScroll("AnonBW", "hazxyte", "Akari")
+	AddRowToScroll("KABLUEE2", "GMod Explorer", "Delte")
+	AddRowToScroll("Section 2", "Omniversequirk", "")
+
+	y = y + namesScrollPanel:GetTall() + 10
 
 	local communityHeightScaled = (373 / 1000) * self:GetWide()
 
 	local communityPanel = vgui.Create("DPanel", self)
 	communityPanel:SetSize(self:GetWide(), communityHeightScaled)
 	communityPanel:SetPos(0, self:GetTall() - communityPanel:GetTall())
+	communityPanel:SetZPos(-2)
 	communityPanel.Paint = function(this, width, height)
 		surface.SetDrawColor(255, 255, 255, 255)
 		surface.SetMaterial(communityMat)

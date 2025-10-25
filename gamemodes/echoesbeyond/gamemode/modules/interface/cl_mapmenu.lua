@@ -75,9 +75,31 @@ function PANEL:Init()
 
 	searchBar:RequestFocus()
 
-	self.FilterShowOnlyEchoed = vgui.Create("DCheckBoxLabel", self)
+	self.mapListPanel = vgui.Create("DScrollPanel", self)
+	self.mapListPanel:SetPos(10, 130)
+	self.mapListPanel:SetSize(self:GetWide() - 20, self:GetTall() - 140)
+
+	-- floating filter panel below the main map panel, this looks better
+	local filterPanel = vgui.Create("DPanel", self:GetParent() or self)
+	filterPanel:SetSize(self:GetWide() - 20, 100) --will be adjusted
+	filterPanel:SetPos(self:GetX() + 10, self:GetY() + self:GetTall() + 10)
+	filterPanel:SetAlpha(0)
+	filterPanel:AlphaTo(255, 0.5)
+	filterPanel.Paint = function(this, width, height)
+		surface.SetDrawColor(30, 30, 30, 230)
+		surface.DrawRect(0, 0, width, height)
+		surface.SetDrawColor(60, 60, 60)
+		surface.DrawOutlinedRect(0, 0, width, height, 1)
+	end
+
+	local filterY = 10
+	local filterSpacing = 20
+	local leftColumnX = 10
+	local rightColumnX = filterPanel:GetWide() / 2 + 10
+
+	self.FilterShowOnlyEchoed = vgui.Create("DCheckBoxLabel", filterPanel)
 	self.FilterShowOnlyEchoed:SetText("Show only echoed on")
-	self.FilterShowOnlyEchoed:SetPos(10, 10)
+	self.FilterShowOnlyEchoed:SetPos(leftColumnX, filterY)
 	self.FilterShowOnlyEchoed:SetValue(0)
 	self.FilterShowOnlyEchoed.OnChange = function()
 		if self.FilterShowOnlyEchoed:GetChecked() then
@@ -86,9 +108,25 @@ function PANEL:Init()
 		self:ListMaps(searchBar:GetValue())
 	end
 
-	self.FilteshowOnlyNotEchoed = vgui.Create("DCheckBoxLabel", self)
+	self.SortByPersonalEchoes = vgui.Create("DCheckBoxLabel", filterPanel)
+	self.SortByPersonalEchoes:SetText("Sort by my echo count")
+	self.SortByPersonalEchoes:SetPos(leftColumnX, filterY + filterSpacing)
+	self.SortByPersonalEchoes:SetValue(0)
+	self.SortByPersonalEchoes.OnChange = function()
+		self:ListMaps(searchBar:GetValue())
+	end
+
+	self.FilterHideCompleted = vgui.Create("DCheckBoxLabel", filterPanel)
+	self.FilterHideCompleted:SetText("Hide 100% read")
+	self.FilterHideCompleted:SetPos(leftColumnX, filterY + filterSpacing * 2)
+	self.FilterHideCompleted:SetValue(0)
+	self.FilterHideCompleted.OnChange = function()
+		self:ListMaps(searchBar:GetValue())
+	end
+
+	self.FilteshowOnlyNotEchoed = vgui.Create("DCheckBoxLabel", filterPanel)
 	self.FilteshowOnlyNotEchoed:SetText("Show only not echoed on")
-	self.FilteshowOnlyNotEchoed:SetPos(10, 30)
+	self.FilteshowOnlyNotEchoed:SetPos(rightColumnX, filterY)
 	self.FilteshowOnlyNotEchoed:SetValue(0)
 	self.FilteshowOnlyNotEchoed.OnChange = function()
 		if self.FilteshowOnlyNotEchoed:GetChecked() then
@@ -97,26 +135,9 @@ function PANEL:Init()
 		self:ListMaps(searchBar:GetValue())
 	end
 
-	self.SortByPersonalEchoes = vgui.Create("DCheckBoxLabel", self)
-	self.SortByPersonalEchoes:SetText("Sort by my echo count")
-	self.SortByPersonalEchoes:SetPos(10, 50)
-	self.SortByPersonalEchoes:SetValue(0)
-	self.SortByPersonalEchoes.OnChange = function()
-		self:ListMaps(searchBar:GetValue())
-	end
-
-	self.FilterHideCompleted = vgui.Create("DCheckBoxLabel", self)
-	self.FilterHideCompleted:SetText("Hide 100% read")
-	self.FilterHideCompleted:SetPos(10, 70)
-	self.FilterHideCompleted:SetValue(0)
-	self.FilterHideCompleted.OnChange = function()
-		self:ListMaps(searchBar:GetValue())
-	end
-
-	self.FilterInstalledOnly = vgui.Create("DCheckBoxLabel", self)
+	self.FilterInstalledOnly = vgui.Create("DCheckBoxLabel", filterPanel)
 	self.FilterInstalledOnly:SetText("Installed Only")
-	self.FilterInstalledOnly:SizeToContents()
-	self.FilterInstalledOnly:SetPos(self:GetWide() - self.FilterInstalledOnly:GetWide() - 10, 10)
+	self.FilterInstalledOnly:SetPos(rightColumnX, filterY + filterSpacing)
 	self.FilterInstalledOnly:SetValue(0)
 	self.FilterInstalledOnly.OnChange = function()
 		if self.FilterInstalledOnly:GetChecked() then
@@ -126,10 +147,9 @@ function PANEL:Init()
 		self:ListMaps(searchBar:GetValue())
 	end
 
-	self.FilterUninstalledOnly = vgui.Create("DCheckBoxLabel", self)
+	self.FilterUninstalledOnly = vgui.Create("DCheckBoxLabel", filterPanel)
 	self.FilterUninstalledOnly:SetText("Uninstalled Only")
-	self.FilterUninstalledOnly:SizeToContents()
-	self.FilterUninstalledOnly:SetPos(self:GetWide() - self.FilterUninstalledOnly:GetWide() - 10, 30)
+	self.FilterUninstalledOnly:SetPos(rightColumnX, filterY + filterSpacing * 2)
 	self.FilterUninstalledOnly:SetValue(0)
 	self.FilterUninstalledOnly.OnChange = function()
 		if self.FilterUninstalledOnly:GetChecked() then
@@ -139,10 +159,9 @@ function PANEL:Init()
 		self:ListMaps(searchBar:GetValue())
 	end
 
-	self.FilterShowLocal = vgui.Create("DCheckBoxLabel", self)
+	self.FilterShowLocal = vgui.Create("DCheckBoxLabel", filterPanel)
 	self.FilterShowLocal:SetText("Show local")
-	self.FilterShowLocal:SizeToContents()
-	self.FilterShowLocal:SetPos(self:GetWide() - self.FilterShowLocal:GetWide() - 10, 50)
+	self.FilterShowLocal:SetPos(leftColumnX, filterY + filterSpacing * 3)
 	self.FilterShowLocal:SetValue(0)
 	self.FilterShowLocal.OnChange = function()
 		if self.FilterShowLocal:GetChecked() then
@@ -154,9 +173,11 @@ function PANEL:Init()
 		self:ListMaps(searchBar:GetValue())
 	end
 
-	self.mapListPanel = vgui.Create("DScrollPanel", self)
-	self.mapListPanel:SetPos(10, 130)
-	self.mapListPanel:SetSize(self:GetWide() - 20, self:GetTall() - 140)
+	--panel height to fit content
+	filterPanel:SetTall(filterY + filterSpacing * 4 + 10)
+
+	--reference to filter panel for closing
+	self.filterPanel = filterPanel
 	self.mapListPanel.Paint = function(this, width, height)
 		surface.SetDrawColor(0, 0, 0, 100)
 		surface.DrawRect(0, 0, this:GetWide(), this:GetTall())
@@ -342,6 +363,12 @@ end
 
 function PANEL:Close(bNoSound)
 	timer.Remove("echoesMapUpdater")
+
+	if IsValid(self.filterPanel) then
+		self.filterPanel:AlphaTo(0, 0.25, 0, function()
+			self.filterPanel:Remove()
+		end)
+	end
 
 	self:AlphaTo(0, 0.25, 0, function()
 		self:Remove()

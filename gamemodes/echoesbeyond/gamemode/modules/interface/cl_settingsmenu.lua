@@ -1,5 +1,6 @@
 -- The settings menu
 local vignette = Material("echoesbeyond/vignette.png", "smooth")
+local arrow = Material("echoesbeyond/echo_arrow.png", "smooth")
 
 local PANEL = {}
 local lastOpenedTab = 1
@@ -7,7 +8,7 @@ local lastOpenedTab = 1
 local function CreateCheckbox(parent, text, convarName, y)
     local checkbox = vgui.Create("DCheckBoxLabel", parent)
     checkbox:SetText(text)
-    checkbox:SizeToContents()
+    checkbox:SetWide(parent:GetWide() - 100)
     checkbox:SetPos(50, y)
     if convarName == "echoes_allowsandbox" or convarName == "cl_drawhud" then
         checkbox:SetValue(GetConVar(convarName):GetBool())
@@ -25,7 +26,26 @@ local function CreateCheckbox(parent, text, convarName, y)
             GetConVar(convarName):SetBool(value)
         end
     end
-    return y + 25
+    return y + checkbox:GetTall() + 5
+end
+
+local function CalculateWrappedHeight(label, text, width)
+    surface.SetFont(label:GetFont())
+    local _, lineHeight = surface.GetTextSize("A")
+    local words = string.Explode(" ", text)
+    local lines = 1
+    local currentLine = ""
+    for _, word in ipairs(words) do
+        local testLine = currentLine .. (currentLine == "" and "" or " ") .. word
+        local textWidth = surface.GetTextSize(testLine)
+        if textWidth > width then
+            lines = lines + 1
+            currentLine = word
+        else
+            currentLine = testLine
+        end
+    end
+    return lines * lineHeight
 end
 local function CreateSlider(parent, text, convar, min, max, decimals, y)
 	local slider = vgui.Create("DNumSlider", parent)
@@ -80,10 +100,34 @@ function PANEL:Init()
 	local tabContentY = tabStartY + tabHeight
 
 	for i, name in ipairs(tabNames) do
-		local panel = vgui.Create("DPanel", self)
-		panel:SetPos(0, tabContentY)
-		panel:SetSize(self:GetWide(), self:GetTall() - tabContentY)
-		panel.Paint = function() end
+		local scrollPanel = vgui.Create("DScrollPanel", self)
+		scrollPanel:SetPos(0, tabContentY)
+		scrollPanel:SetSize(self:GetWide(), self:GetTall() - tabContentY)
+		scrollPanel.Paint = function() end -- transparent to show main background
+		local sbar = scrollPanel:GetVBar()
+		function sbar:Paint(w, h)
+			draw.RoundedBox(0, 0, 0, w, h, Color(25, 25, 25, 150))
+		end
+		function sbar.btnUp:Paint(w, h)
+			surface.SetDrawColor(100, 100, 100)
+			surface.SetMaterial(arrow)
+			surface.DrawTexturedRectRotated(w / 2, h / 2, w * 1.5, h * 1.5, 0)
+		end
+		function sbar.btnDown:Paint(w, h)
+			surface.SetDrawColor(100, 100, 100)
+			surface.SetMaterial(arrow)
+			surface.DrawTexturedRectRotated(w / 2, h / 2, w * 1.5, h * 1.5, 180)
+		end
+		function sbar.btnGrip:Paint(w, h)
+			draw.RoundedBox(0, 0, 0, w, h, Color(75, 75, 75))
+			surface.SetDrawColor(0, 0, 0, 255)
+			surface.SetMaterial(vignette)
+			surface.DrawTexturedRect(0, 0, w, h)
+		end
+		local panel = vgui.Create("DPanel", scrollPanel)
+		panel:SetSize(self:GetWide(), 1000) --height for content
+		panel.Paint = function() end --inner panel transparent too
+		scrollPanel:AddItem(panel)
 		tabPanels[i] = panel
 	end
 
@@ -186,9 +230,12 @@ local totalTabsWidth = 0
 		ImmersionLabel:SetText("⬇ Hide's/disables options that may be considered \"Cheaty\" or immersion breaking.")
 		ImmersionLabel:SetFont("Echoes_statsfont")
 		ImmersionLabel:SetColor(Color(105, 105, 200))
-		ImmersionLabel:SizeToContents()
+		ImmersionLabel:SetWide(pnl:GetWide() - 100)
 		ImmersionLabel:SetPos(50, y)
-		y = y + ImmersionLabel:GetTall() + 5
+		ImmersionLabel:SetWrap(true)
+		ImmersionLabel:SetAutoStretchVertical(true)
+		local immersionHeight = CalculateWrappedHeight(ImmersionLabel, ImmersionLabel:GetText(), ImmersionLabel:GetWide())
+		y = y + immersionHeight + 5
 
 		y = CreateCheckbox(pnl, "Immersive Mode", "echoes_immersivemode", y)
 
@@ -198,16 +245,20 @@ local totalTabsWidth = 0
 		SandboxLabel:SetText("⬇ May be buggy, use with caution")
 		SandboxLabel:SetFont("Echoes_statsfont")
 		SandboxLabel:SetColor(Color(255, 60, 60))
-		SandboxLabel:SizeToContents()
+		SandboxLabel:SetWide(pnl:GetWide() - 100)
 		SandboxLabel:SetPos(50, y)
-		y = y + SandboxLabel:GetTall() + 5
+		SandboxLabel:SetWrap(true)
+		SandboxLabel:SetAutoStretchVertical(true)
+		local sandboxHeight = CalculateWrappedHeight(SandboxLabel, SandboxLabel:GetText(), SandboxLabel:GetWide())
+		y = y + sandboxHeight + 5
 
 		y = CreateCheckbox(pnl, "Inject Sandbox Functions (Spawnmenu, etc, Requires mapchange)", "echoes_allowsandbox", y)
-		y = y + 20
 
 		if not EchoesSettings["echoes_immersivemode"] then
+			y = y + 20
 			y = CreateCheckbox(pnl, "Bypass placement checks (void, ground, etc)", "echoes_bypasschecks", y)
 			y = CreateCheckbox(pnl, "Debug info", "echoes_debuginfo", y)
+			y = y + 20
 		end
 
 		local deleteAll = vgui.Create("DButton", pnl)
@@ -266,71 +317,80 @@ local totalTabsWidth = 0
 			EchoSound("button_click")
 		end
 
-		local ForceParty = vgui.Create("DButton", pnl)
-		ForceParty:SetSize(pnl:GetWide() * 0.5, 30)
-		ForceParty:SetText("Force party mode")
-		ForceParty:SetFont("CreditsText")
-		ForceParty:SetColor(Color(175, 175, 175))
-		ForceParty:CenterHorizontal()
-		ForceParty:SetY(pnl:GetTall() - 100)
-		ForceParty.Paint = function(this, width, height)
-			surface.SetDrawColor(this:IsDown() and Color(100, 100, 100) or this:IsHovered() and Color(75, 75, 75) or Color(50, 50, 50))
-			surface.DrawRect(0, 0, width, height)
+		if not EchoesSettings["echoes_immersivemode"] then
+			local ForceParty = vgui.Create("DButton", pnl)
+			ForceParty:SetSize(pnl:GetWide() * 0.5, 30)
+			ForceParty:SetText("Force party mode")
+			ForceParty:SetFont("CreditsText")
+			ForceParty:SetColor(Color(175, 175, 175))
+			ForceParty:CenterHorizontal()
+			ForceParty:SetY(pnl:GetTall() - 100)
+			ForceParty.Paint = function(this, width, height)
+				surface.SetDrawColor(this:IsDown() and Color(100, 100, 100) or this:IsHovered() and Color(75, 75, 75) or Color(50, 50, 50))
+				surface.DrawRect(0, 0, width, height)
+			end
+			ForceParty.DoClick = function()
+				InitPartyMode("Engage party mode!")
+			end
 		end
-		ForceParty.DoClick = function()
-			InitPartyMode("Engage party mode!")
-		end
-
-		y = y + 20
 
 		local scaryLabel = vgui.Create("DLabel", pnl)
 		scaryLabel:SetText("⬇ Requires Gmod Light / Environment Editor, click to download")
 		scaryLabel:SetFont("Echoes_statsfont")
 		scaryLabel:SetColor(Color(255, 60, 60))
-		scaryLabel:SizeToContents()
+		scaryLabel:SetWide(pnl:GetWide() - 100)
 		scaryLabel:SetPos(50, y)
+		scaryLabel:SetWrap(true)
+		scaryLabel:SetAutoStretchVertical(true)
 		scaryLabel:SetCursor("hand")
 		scaryLabel:SetMouseInputEnabled(true)
 		scaryLabel.OnMousePressed = function()
 			gui.OpenURL("https://steamcommunity.com/sharedfiles/filedetails/?id=2779451924")
 		end
-		y = y + scaryLabel:GetTall() + 5
+		local scaryHeight = CalculateWrappedHeight(scaryLabel, scaryLabel:GetText(), scaryLabel:GetWide())
+		y = y + scaryHeight + 5
 
 		local scaryCheckbox = vgui.Create("DCheckBoxLabel", pnl)
 		scaryCheckbox:SetText("Scary mode (dark, disables static lighting, new music)")
-		scaryCheckbox:SizeToContents()
+		scaryCheckbox:SetWide(pnl:GetWide() - 100)
 		scaryCheckbox:SetPos(50, y)
 		scaryCheckbox:SetValue(EchoesSettings["echoes_scarymode"])
 		scaryCheckbox.OnChange = function(self, value)
 			GetConVar("echoes_scarymode"):SetBool(value)
 			ApplyScaryMode(value)
 		end
-		y = y + 50
+		y = y + scaryCheckbox:GetTall() + 5
 
 		local draftsLabel = vgui.Create("DLabel", pnl)
 		draftsLabel:SetText("⬇ May bug, as i suck, so it needs to be enabled manually")
 		draftsLabel:SetFont("Echoes_statsfont")
 		draftsLabel:SetColor(Color(255, 60, 60))
-		draftsLabel:SizeToContents()
+		draftsLabel:SetWide(pnl:GetWide() - 100)
 		draftsLabel:SetPos(50, y)
-		y = y + draftsLabel:GetTall() + 5
+		draftsLabel:SetWrap(true)
+		draftsLabel:SetAutoStretchVertical(true)
+		local draftsLabelHeight = CalculateWrappedHeight(draftsLabel, draftsLabel:GetText(), draftsLabel:GetWide())
+		y = y + draftsLabelHeight + 5
 
 		local draftsCheckbox = vgui.Create("DCheckBoxLabel", pnl)
 		draftsCheckbox:SetText("Enable drafts (Make echoes on cooldown)")
-		draftsCheckbox:SizeToContents()
+		draftsCheckbox:SetWide(pnl:GetWide() - 100)
 		draftsCheckbox:SetPos(50, y)
 		draftsCheckbox:SetValue(EchoesSettings["echoes_enable_drafts"])
 		draftsCheckbox.OnChange = function(self, value)
 			GetConVar("echoes_enable_drafts"):SetBool(value)
 		end
-		y = y + 20
+		y = y + draftsCheckbox:GetTall() + 5
 
 		local draftsInfo = vgui.Create("DLabel", pnl)
 		draftsInfo:SetText("Drafts allow creating up to 3 echoes while on cooldown, Drafts can be seen in personal echoes menu.")
 		draftsInfo:SetColor(Color(128, 128, 128))
-		draftsInfo:SizeToContents()
+		draftsInfo:SetWide(pnl:GetWide() - 100)
 		draftsInfo:SetPos(50, y)
-		y = y + draftsInfo:GetTall() + 5
+		draftsInfo:SetWrap(true)
+		draftsInfo:SetAutoStretchVertical(true)
+		local draftsInfoHeight = CalculateWrappedHeight(draftsInfo, draftsInfo:GetText(), draftsInfo:GetWide())
+		y = y + draftsInfoHeight + 5
 	end
 
 	SwitchToTab(lastOpenedTab)
