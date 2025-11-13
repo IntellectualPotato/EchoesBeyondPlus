@@ -152,6 +152,22 @@ function FetchEchoes()
 		local readEchoes = ReadEchoes()
 		local echoCount = #echoData
 
+		--filter out own echo IDs from readEchoes
+		local ownIds = {}
+		for _, echo in ipairs(writtenEchoes) do
+			ownIds[echo.id] = true
+		end
+		local filteredReadEchoes = {}
+		for _, id in ipairs(readEchoes) do
+			if not ownIds[id] then
+				table.insert(filteredReadEchoes, id)
+			end
+		end
+		if #filteredReadEchoes < #readEchoes then
+			WriteEchoes(filteredReadEchoes)
+		end
+		readEchoes = filteredReadEchoes
+
 		if (echoCount > #echoes) then
 			EchoSound("echo_create")
 
@@ -306,6 +322,7 @@ function FetchEchoes()
 			["vp_"] = "VoidPlaces",
 			["vpc_"] = "VoidPlaces",
 			["gm_deltarune"] = "UTDR",
+			["deltarune"] = "UTDR",
 			["hls"] = "hls"
 		}
 

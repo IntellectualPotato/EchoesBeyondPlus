@@ -245,7 +245,11 @@ function PANEL:ListMaps(filter)
 		local name = v.name
 		local amount = v.amount
 
-		if (filter and !name:lower():find(filter:lower())) then continue end
+		if (filter) then
+			local normalized_filter = filter:lower():gsub("[%s_]", "")
+			local normalized_name = name:lower():gsub("[%s_]", "")
+			if (!normalized_name:find(normalized_filter, 1, true)) then continue end
+		end
 		if (not showLocal and not filter and amount < 10) then continue end
 
 		local totalEchoesOnMap = mapList[name] or amount

@@ -138,7 +138,8 @@ function PANEL:Init()
 
 	--Global read counts tracker to see how much time you've wasted reading echoes hehe
 	local readText = vgui.Create("DLabel", self)
-	readText:SetText("You have read " .. #ReadEchoes() .. " Echoes from the community, That's " .. (globalEchoCount > 0 and math.Round((#ReadEchoes() / globalEchoCount) * 100, 2) or 0) .. "% of all echoes!")	
+	local ttlRead = #ReadEchoes() + #writtenEchoes
+	readText:SetText("You have read " .. ttlRead .. " Echoes from the community, That's " .. (globalEchoCount > 0 and math.Round((ttlRead / globalEchoCount) * 100, 2) or 0) .. "% of all echoes!")	
 	readText:SetFont("DermaDefaultBold")
 	readText:SizeToContents()
 	readText:CenterHorizontal()
@@ -257,8 +258,12 @@ function PANEL:Init()
 	AddRowToScroll("Potion", "Misty_Bun", "Knaurl")
 	AddRowToScroll("AnonBW", "hazxyte", "Akari")
 	AddRowToScroll("KABLUEE2", "GMod Explorer", "Delte")
-	AddRowToScroll("Section 2", "Omniversequirk", "")
-
+	AddRowToScroll("Section 2", "Omniversequirk", "ihzma")
+	AddRowToScroll("Calvin", "Canned_Toaster", "Hgrunt2009")
+	AddRowToScroll("MoonMast3r", "Gunterb/Corvus", "Flufflez")
+	AddRowToScroll("Dark", "Jame", "Mo")
+	AddRowToScroll("A.G.A.", "qdshuck", "TotallyNotEd")
+	AddRowToScroll("Avis", "Traya Tyto", "Whatwat")
 	y = y + namesScrollPanel:GetTall() + 10
 
 	local communityHeightScaled = (373 / 1000) * self:GetWide()

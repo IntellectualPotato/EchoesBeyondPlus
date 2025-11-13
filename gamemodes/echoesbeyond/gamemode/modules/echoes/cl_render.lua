@@ -120,6 +120,8 @@ local skins = {
         mat1 = echoMat,
         mat2 = echoBlankMat,
         dotmat = echoDotSingleMat,
+        readcolor = Color(100, 100, 100),
+        readcolor_light = Color(25, 25, 25),
     },
     ["star"] = {
         mat1 = Material("echoesbeyond/Skins/starecho.png", "mips"),
@@ -150,15 +152,17 @@ local skins = {
 		font = "utdr_font"
     },
 	["VoidPlaces"] = {
-        mat1 = Material("echoesbeyond/Skins/vpecho.png", "mips"),
-        mat2 = Material("echoesbeyond/Skins/vpecho_blank.png", "mips"),
-        dotmat = Material("echoesbeyond/Skins/vpecho_dot.png"),
+	    mat1 = Material("echoesbeyond/Skins/vpecho.png", "mips"),
+	    mat2 = Material("echoesbeyond/Skins/vpecho_blank.png", "mips"),
+	    dotmat = Material("echoesbeyond/Skins/vpecho_dot.png"),
 		mat_read = Material("echoesbeyond/Skins/vpecho_read.png", "mips"),
-        sound = "echo_activate_vp",
-        color = Color(200, 200, 200),
+	    sound = "echo_activate_vp",
+	    color = Color(200, 200, 200),
 		color_light = Color(255, 95, 255),
-		font = "vp_font"
-    },
+		font = "vp_font",
+	    readcolor = Color(100, 100, 100),
+	    readcolor_light = Color(25, 25, 25),
+	},
 	["Apocalypse"] = {
         mat1 = Material("echoesbeyond/Skins/apocecho.png", "mips"),
         mat2 = Material("echoesbeyond/Skins/apocecho_blank.png", "mips"),
@@ -166,19 +170,21 @@ local skins = {
         color = Color(220, 255, 230),
     },
 	["hls"] = {
-        mat1 = Material("echoesbeyond/Skins/hlsecho.png"),
-        mat2 = Material("echoesbeyond/Skins/hlsecho_blank.png"),
+	    mat1 = Material("echoesbeyond/Skins/hlsecho.png"),
+	    mat2 = Material("echoesbeyond/Skins/hlsecho_blank.png"),
 		mat_read = Material("echoesbeyond/Skins/hlsecho_read.png", "mips"),
-        dotmat = {
-            mat = Material("echoesbeyond/Skins/hls_dot.png"),
-        	scale = 0.0024,
-            x_coords = {-1200-1000, -960, -720+1000}
-        },
-        sound = "echo_activate_hls",
+	    dotmat = {
+	       mat = Material("echoesbeyond/Skins/hls_dot.png"),
+	    	scale = 0.0024,
+	       x_coords = {-1200-1000, -960, -720+1000}
+	    },
+	    sound = "echo_activate_hls",
 		dotWave = 300,
-        color = Color(200, 200, 200),
+	    color = Color(200, 200, 200),
 		color_light = Color(255, 150, 150),
-    },
+	    readcolor = Color(100, 100, 100),
+	    readcolor_light = Color(25, 25, 25),
+	},
 	["blueprint"] = {
         mat1 = Material("echoesbeyond/Skins/echo_blueprint.png"),
         mat2 = Material("echoesbeyond/Skins/echo_blueprint_blank.png"),
@@ -279,13 +285,20 @@ local cameraData = {
 	fx = 0, fy = 0, fz = 0
 }
 
+local function GetCameraPos()
+	return cameraData.cx, cameraData.cy, cameraData.cz
+end
+
+local function GetCameraFwd()
+	return cameraData.fx, cameraData.fy, cameraData.fz
+end
+
 local function EchoDistSortFunc(a,b) return a.distSqr > b.distSqr end
 local function GetSortedVisibleEchoes()
 	cutOffDist = EchoesSettings["echoes_renderdist"]
 	local sortedEchoes = {}
-	local cdata = cameraData
-	local cx, cy, cz = cdata.cx, cdata.cy, cdata.cz
-	local fx, fy, fz = cdata.fx, cdata.fy, cdata.fz
+	local cx, cy, cz = GetCameraPos()
+	local fx, fy, fz = GetCameraFwd()
 
 	for _, echo in ipairs(echoes) do
 		if (echo.init == 0) then
@@ -315,8 +328,7 @@ end
 
 local function UpdateEchoRotations(inEchoes, dt)
 	local lerpFactor = math.Clamp(dt * 5, 0, 1)
-	local cdata = cameraData
-	local cx, cy, cz = cdata.cx, cdata.cy, cdata.cz
+	local cx, cy, cz = GetCameraPos()
 
 	for _, echo in ipairs(inEchoes) do
 		local px, py, pz = GetEchoPosition(echo)
@@ -338,6 +350,14 @@ local function UpdateEchoInteractions(inEchoes, curTimeSpeed, dt)
 	local profanity = EchoesSettings["echoes_profanity"]
 	local slowActivate = EchoesSettings["echoes_slowactivate"]
 	local activateSpeed = slowActivate and 1.5 or 3
+	local cx, cy, cz = GetCameraPos()
+	local fx, fy, fz = GetCameraFwd()
+	local visibleOnly = EchoesSettings["echoes_visibleonly"]
+	local visibleFov, dotThreshold
+	if visibleOnly then
+		visibleFov = EchoesSettings["echoes_visiblefov"]
+		dotThreshold = math.cos(math.rad(visibleFov / 2))
+	end
 
 	for _, echo in ipairs(inEchoes) do
 		echo.z_offset = echo.z_offset or 0
@@ -345,15 +365,27 @@ local function UpdateEchoInteractions(inEchoes, curTimeSpeed, dt)
 		local bOwner = echo.isOwner
 
 		if (((echo.explicit and profanity) or !echo.explicit) and !echo.loading) then
-			if (echo.distSqr < activationDist) then
+			local x, y, z = GetEchoPosition(echo)
+			local _, _, cameraZ = GetCameraPos()
+			local _, _, echoZ = echo.pos:Unpack()
+			local heightDiff = cameraZ - echoZ -32
+			local predictedZOffset = activeZOffset + heightDiff
+
+			local shouldActivate = echo.distSqr < activationDist
+			if visibleOnly then
+				local directionToEcho = Vector(x - cx, y - cy, z - cz + predictedZOffset)
+				directionToEcho:Normalize()
+				local dot = directionToEcho:Dot(Vector(fx, fy, fz))
+				shouldActivate = shouldActivate and dot >= dotThreshold
+			end
+
+			if shouldActivate then
+
+
 				local active = math.min(echo.active + dt * activateSpeed, 1)
 
-				local cameraZ = cameraData.cz
-				local _, _, echoZ = echo.pos:Unpack()
-				local heightDiff = cameraZ - echoZ -32
-
 				echo.active = active
-				echo.z_offset = Lerp(dt * activateSpeed, echo.z_offset, activeZOffset  + heightDiff)
+				echo.z_offset = Lerp(dt * activateSpeed, echo.z_offset, predictedZOffset)
 
 				if (!echo.soundActive) then
 					echo.soundActive = true
@@ -379,8 +411,8 @@ local function UpdateEchoInteractions(inEchoes, curTimeSpeed, dt)
 					readEchoCount = readEchoCount + 1
 
 					local mapName = game.GetMap()
-            		readMapCounts[mapName] = (readMapCounts[mapName] or 0) + 1
-            		SaveReadMapCounts()
+				         		readMapCounts[mapName] = (readMapCounts[mapName] or 0) + 1
+				         		SaveReadMapCounts()
 
 					WriteEchoes(savedData)
 				end
@@ -473,6 +505,20 @@ local isAltEMenuOpen = false
 local altEMenuTargetEcho = nil
 local altEMenuSelectedOption = 1
 local altEMenuFadeStartTime = 0
+
+function ReloadEchoColors()
+	for _, echo in ipairs(echoes) do
+		echo.color = nil
+		echo.light_color = nil
+		echo.readcolor = nil
+		echo.readcolor_light = nil
+	end
+end
+
+concommand.Add("echoes_reload_colors", function()
+	ReloadEchoColors()
+	EchoNotify("Echo colors reloaded!")
+end)
 
 hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDepth, bDrawingSkybox)
 	if (bDrawingDepth or bDrawingSkybox) then return end
@@ -576,9 +622,23 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 			if explicit then
 				echo.color = Color(255, 50, 50)
 				echo.light_color = Color(255, 25, 25)
+				echo.readcolor = Color(100, 80, 80)
+				echo.readcolor_light = Color(30, 20, 20)
+			elseif echo.special then
+				echo.color = Color(200, 0, 200)
+				echo.light_color = Color(255, 0, 255)
+				echo.readcolor = Color(100, 100, 100)
+				echo.readcolor_light = Color(25, 25, 25)
+			elseif bOwner then
+				echo.color = Color(255, 255, 0)
+				echo.light_color = Color(255, 255, 0)
+				echo.readcolor = Color(100, 100, 100)
+				echo.readcolor_light = Color(25, 25, 25)
 			else
 				echo.color = skin.color or Color(150, 255, 255)
 				echo.light_color = skin.color_light or echo.color
+				echo.readcolor = skin.readcolor or Color(100, 100, 100)
+				echo.readcolor_light = skin.readcolor_light or Color(25, 25, 25)
 			end
 		end
 
@@ -588,7 +648,7 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 		if (not read and not loading) then
 			local baseDrawColor = echo.color
 			local baseLightColor = echo.light_color
-			
+
 			if not bOwner and not special then
 				 baseLightColor = Color(math.max(0, baseLightColor.r - 50), baseLightColor.g, baseLightColor.b)
 			end
@@ -602,10 +662,18 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 			gDraw = Lerp(active, baseDrawColor.g, 255)
 			bDraw = Lerp(active, baseDrawColor.b, 255)
 		else
-			-- Read/loading color remains the same
-			r, g, b = 25 + 230 * active, 25 + 230 * active, 25 + 230 * active
-			rDraw, gDraw, bDraw = 100 + 155 * active, 100 + 155 * active, 100 + 155 * active
-		end	
+			--read use readcolor instead
+			local baseDrawColor = echo.readcolor
+			local baseLightColor = echo.readcolor_light
+
+			r = Lerp(active, baseLightColor.r, 255)
+			g = Lerp(active, baseLightColor.g, 255)
+			b = Lerp(active, baseLightColor.b, 255)
+
+			rDraw = Lerp(active, baseDrawColor.r, 255)
+			gDraw = Lerp(active, baseDrawColor.g, 255)
+			bDraw = Lerp(active, baseDrawColor.b, 255)
+		end
 
 		if (echoDistSqr <= lightRenderDist and showDlights and i >= (echoCount - (32 - dLightCount))) then
 			local dLight = DynamicLight(echo.id)
@@ -861,7 +929,7 @@ hook.Add("Think", "Echoes_thinkloop", function()
             elseif altEMenuSelectedOption == 2 then --translate
                 TranslateEcho(altEMenuTargetEcho)
             end
-            
+
 			--clean up
             altEMenuTargetEcho.selectionLerp1 = nil
             altEMenuTargetEcho.selectionLerp2 = nil
@@ -882,7 +950,7 @@ hook.Add("Think", "Echoes_thinkloop", function()
                 local echo = echoes[i]
                 if echo.active and echo.active > 0.9 then
                     local distSqr = plyPos:DistToSqr(echo.pos)
-                    if distSqr < minDistSqr then	
+                    if distSqr < minDistSqr then
                         minDistSqr = distSqr
                         closestEcho = echo
                     end
@@ -897,7 +965,7 @@ hook.Add("Think", "Echoes_thinkloop", function()
                 altEMenuFadeStartTime = CurTime()
                 altEMenuTargetEcho.selectionLerp1 = 1
                 altEMenuTargetEcho.selectionLerp2 = 0
-                
+
                 local boxSize = 80
                 local boxPadding = 10
                 local totalWidth = (boxSize * 2) + boxPadding

@@ -26,8 +26,3 @@ hook.Add("HUDPaint", "interface_HUDPaint", function()
 	surface.SetMaterial(vignette)
 	surface.DrawTexturedRect(0, 0, ScrW(), ScrH())
 end)
-
--- Hide Scoreboard
-hook.Add("ScoreboardShow", "interface_ScoreboardShow", function()
-	return false
-end)

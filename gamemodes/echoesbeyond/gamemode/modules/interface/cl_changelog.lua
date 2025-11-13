@@ -2,7 +2,7 @@
 -- A simple changelog menu
 local PANEL = {}
 local vignette = Material("echoesbeyond/vignette.png")
-local changelogID = "ebplusScreenResoFix_optionsfix"
+local changelogID = "ebplusNewChecksNsliders"
 
 function PANEL:Init()
 	if (IsValid(changeLog)) then
@@ -53,10 +53,13 @@ function PANEL:Init()
 	end
 
 	changelog:SetText([[
-		- Adjusted multiple places in code to try and support low-res monitors more
-		- Related to above: Added scrollbar to community and options menu to help
-		- Related: Made map list filters be a separate floating panel too
-		- Note: Some text still may over-flow, important main menu ones *should* be resolved
+		- Updated settings menu to have new custom checkbox's and sliders to improve continuity
+		- Offensive echoes have a slightly different read color
+		- Added an option to where you have to look at an echo in a specified FOV to activate it
+		- Added more lenient map searching (searching for gm_construct, gm construct, gmconstruct yields same results)
+		- Filtered out your own echoes from ReadEchoes + Added own echoes to COmmunity Menu total count
+		- Fix tab menu sometimes being unable to be opened (hopefully)
+		- Few community wall names
 	]])
 
 	local close = vgui.Create("DButton", self)
