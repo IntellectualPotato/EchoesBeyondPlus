@@ -2,7 +2,7 @@
 -- A simple changelog menu
 local PANEL = {}
 local vignette = Material("echoesbeyond/vignette.png")
-local changelogID = "ebplusNewChecksNsliders"
+local changelogID = "RMcheckboxAddNames"
 
 function PANEL:Init()
 	if (IsValid(changeLog)) then

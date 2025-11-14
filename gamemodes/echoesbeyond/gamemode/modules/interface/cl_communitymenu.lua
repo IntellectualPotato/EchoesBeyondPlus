@@ -264,6 +264,7 @@ function PANEL:Init()
 	AddRowToScroll("Dark", "Jame", "Mo")
 	AddRowToScroll("A.G.A.", "qdshuck", "TotallyNotEd")
 	AddRowToScroll("Avis", "Traya Tyto", "Whatwat")
+	AddRowToScroll("MidnightGamer","Gatecat 13","")
 	y = y + namesScrollPanel:GetTall() + 10
 
 	local communityHeightScaled = (373 / 1000) * self:GetWide()
