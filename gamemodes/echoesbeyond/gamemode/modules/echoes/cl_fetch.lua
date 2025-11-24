@@ -258,9 +258,6 @@ function FetchEchoes()
 			if isSpecial then
 				newEchoTable.color = Color(200, 0, 200)
 				newEchoTable.light_color = Color(255, 0, 255)
-			elseif isOwner then
-				newEchoTable.color = Color(255, 255, 0)
-				newEchoTable.light_color = Color(255, 255, 0)
 			end
 
 			echoes[#echoes + 1] = newEchoTable

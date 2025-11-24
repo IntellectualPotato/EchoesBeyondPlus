@@ -1,239 +1,10 @@
 -- The settings menu
+include("cl_widgets.lua") --moved to a NEW file!!
 local vignette = Material("echoesbeyond/vignette.png", "smooth")
-local arrow = Material("echoesbeyond/echo_arrow.png", "smooth")
-local checkmark = Material("echoesbeyond/checkmark.png", "smooth")
 
 local PANEL = {}
 local lastOpenedTab = 1
 
-local function CreateCheckbox(parent, text, convarName, y, onToggle)
-    local panel = vgui.Create("DPanel", parent)
-    panel:SetSize(parent:GetWide() - 100, 25)
-    panel:SetPos(50, y)
-    panel:SetMouseInputEnabled(true)
-
-    local checked = false
-    if convarName == "echoes_allowsandbox" or convarName == "cl_drawhud" then
-        checked = GetConVar(convarName):GetBool()
-    else
-        checked = EchoesSettings[convarName]
-    end
-
-    local label = vgui.Create("DLabel", panel)
-    label:SetText(text)
-    label:SetFont("DermaDefault")
-    label:SizeToContents()
-    label:SetPos(30, 2)
-    label:SetColor(Color(200, 200, 200))
-
-    panel.Paint = function(s, w, h)
-        local boxColor = checked and Color(28, 40, 40) or (s:IsHovered() and Color(75, 75, 75) or Color(50, 50, 50))
-        surface.SetDrawColor(boxColor)
-        surface.DrawRect(0, 0, 20, 20)
-
-        --lil border (yummy)
-        surface.SetDrawColor(100, 100, 100)
-        surface.DrawOutlinedRect(0, 0, 20, 20)
-
-        if checked then
-            surface.SetDrawColor(255, 255, 255)
-            surface.SetMaterial(checkmark)
-            surface.DrawTexturedRect(2, 2, 16, 16)
-        end
-    end
-
-    panel.OnMousePressed = function(s)
-        checked = not checked
-        if convarName == "echoes_allowsandbox" then --special case because its server-side
-            net.Start("Echoes_ToggleAllowSandbox")
-            net.WriteBool(checked)
-            net.SendToServer()
-        elseif convarName == "cl_drawhud" then
-            RunConsoleCommand("cl_drawhud", checked and "1" or "0")
-        else
-            GetConVar(convarName):SetBool(checked)
-        end
-        if onToggle then onToggle(checked) end
-        EchoSound("button_click")
-        s:InvalidateLayout()
-    end
-
-    return y + panel:GetTall() + 5
-end
-
-local function CalculateWrappedHeight(label, text, width)
-    surface.SetFont(label:GetFont())
-    local _, lineHeight = surface.GetTextSize("A")
-    local words = string.Explode(" ", text)
-    local lines = 1
-    local currentLine = ""
-    for _, word in ipairs(words) do
-        local testLine = currentLine .. (currentLine == "" and "" or " ") .. word
-        local textWidth = surface.GetTextSize(testLine)
-        if textWidth > width then
-            lines = lines + 1
-            currentLine = word
-        else
-            currentLine = testLine
-        end
-    end
-    return lines * lineHeight
-end
-local function CreateSlider(parent, text, convar, min, max, decimals, y, customNotches)
-    local function CalculateNotchParams(range, decimals)
-        local wishNotches = math.Clamp(math.floor(range / 10), 5, 10)
-        if range > 100000 then
-            wishNotches = wishNotches * 2
-        end
-        local step = math.max(10 ^ (-decimals), range / wishNotches)
-        step = math.Round(step, decimals)
-        return step, wishNotches
-    end
-
-    local panel = vgui.Create("DPanel", parent)
-    panel:SetSize(parent:GetWide() - 100, 30)
-    panel:SetPos(50, y)
-    panel:SetMouseInputEnabled(true)
-
-    local value = EchoesSettings[convar:GetName()] or min
-    local isDragging = false
-    local trackWidth = panel:GetWide() - 60
-
-    local label = vgui.Create("DLabel", panel)
-    label:SetText(text)
-    label:SetFont("DermaDefault")
-    label:SizeToContents()
-    label:SetPos(0, 2)
-    label:SetColor(Color(200, 200, 200))
-
-    local valueLabel = vgui.Create("DLabel", panel)
-    valueLabel:SetText(string.format("%." .. decimals .. "f", value))
-    valueLabel:SetFont("DermaDefault")
-    valueLabel:SizeToContents()
-    valueLabel:SetPos(trackWidth + 10, 2)
-    valueLabel:SetColor(Color(200, 200, 200))
-    valueLabel:SetContentAlignment(5)
-    valueLabel:SetWide(50)
-
-    panel.Paint = function(s, w, h)
-        --unfilled slider BG
-        surface.SetDrawColor(50, 50, 50)
-        surface.DrawRect(0, 15, trackWidth, 4)
-
-        --filled slider BG
-        local fillWidth = ((value - min) / (max - min)) * trackWidth
-        surface.SetDrawColor(200, 200, 200)
-        surface.DrawRect(0, 15, fillWidth, 4)
-
- 		--border(lands)
- 		surface.SetDrawColor(100, 100, 100)
- 		surface.DrawOutlinedRect(0, 15, trackWidth, 4)
-
-        --Notches (creator of the hit game minecraft)
-    local range = max - min
-        if customNotches then
-            for _, notchVal in ipairs(customNotches) do
-                if notchVal >= min and notchVal <= max then
-                    local notchX = ((notchVal - min) / (max - min)) * trackWidth
-                    surface.SetDrawColor(200, 200, 200)  --same as fill bar to blend
-                    surface.DrawRect(notchX - 1, 15, 2, 6) --stick out the bottom a bit
-                end
-            end
-        else
-            local step, wishNotches = CalculateNotchParams(range, decimals)
-            local numSteps = math.floor(range / step) + 1
-            if numSteps <= 40 then
-                for i = 0, numSteps - 1 do
-                    local val = math.Clamp(math.Round(min + i * step, decimals), min, max)
-                    local notchX = ((val - min) / (max - min)) * trackWidth
-                    surface.SetDrawColor(200, 200, 200)  --same as fill bar to blend
-                    surface.DrawRect(notchX - 1, 15, 2, 6) --stick out the bottom a bit
-                end
-            end
-        end
-
-        local arrowX = math.Clamp(fillWidth, 8, trackWidth - 8)
-        local arrowColor = isDragging and Color(150, 150, 150) or (s:IsHovered() and Color(100, 100, 100) or Color(75, 75, 75))
-        surface.SetDrawColor(arrowColor)
-        surface.SetMaterial(arrow)
-        surface.DrawTexturedRectRotated(arrowX, 25, 16, 16, 0)
-    end
-
-    local function SnapToNotch(val)
-        if customNotches then
-            local closest = min
-            local minDiff = math.abs(val - closest)
-            for _, notchVal in ipairs(customNotches) do
-                if notchVal >= min and notchVal <= max then
-                    local diff = math.abs(val - notchVal)
-                    if diff < minDiff then
-                        minDiff = diff
-                        closest = notchVal
-                    end
-                end
-            end
-            return closest
-        else
-            local range = max - min
-            local step = CalculateNotchParams(range, decimals)
-            local snapped = math.Round(val / step) * step
-            return math.Clamp(snapped, min, max)
-        end
-    end
-
-    panel.OnMousePressed = function(s, mouseCode)
-        if mouseCode == MOUSE_LEFT then
-            isDragging = true
-            panel:MouseCapture(true)
-            local mouseX, _ = s:ScreenToLocal(gui.MouseX(), gui.MouseY())
-            if mouseX >= 0 and mouseX <= trackWidth then
-                local oldValue = value
-                value = math.Clamp(min + ((mouseX / trackWidth) * (max - min)), min, max)
-                if not input.IsKeyDown(KEY_LSHIFT) then
-                    value = SnapToNotch(value)
-                end
-                if value ~= oldValue then
-                    local percentage = (value - min) / (max - min)
-                    local pitch = 80 + (percentage * 50)  --80% to 130%
-                    EchoSound("slider_drag", pitch)
-                end
-                convar:SetFloat(value)
-                valueLabel:SetText(string.format("%." .. decimals .. "f", value))
-                s:InvalidateLayout()
-            end
-        end
-    end
-
-    panel.OnMouseReleased = function(s, mouseCode)
-        if mouseCode == MOUSE_LEFT then
-            isDragging = false
-            panel:MouseCapture(false)
-        end
-    end
-
-    panel.OnCursorMoved = function(s, x, y)
-        if isDragging then
-            local oldValue = value
-            local newValue = math.Clamp(min + ((x / trackWidth) * (max - min)), min, max)
-            if not input.IsKeyDown(KEY_LSHIFT) then
-                newValue = SnapToNotch(newValue)
-            end
-            if newValue ~= value then
-                value = newValue
-                if newValue ~= oldValue then
-                    local percentage = (newValue - min) / (max - min)
-                    local pitch = 80 + (percentage * 50)  --80% to 130%
-                    EchoSound("slider_drag", pitch)
-                end
-                convar:SetFloat(value)
-                valueLabel:SetText(string.format("%." .. decimals .. "f", value))
-                s:InvalidateLayout()
-            end
-        end
-    end
-
-    return y + panel:GetTall() + 5
-end
 
 function PANEL:Init()
 	if (IsValid(settingsMenu)) then
@@ -356,47 +127,59 @@ local totalTabsWidth = 0
 	do
 		local y = 20
 		local pnl = tabPanels[1]
-		y = CreateCheckbox(pnl, "Enable music", "echoes_music", y)
-		y = CreateCheckbox(pnl, "Show read Echoes", "echoes_showread", y)
-		y = CreateCheckbox(pnl, "Don't fade read echoes", "echoes_disablereadsys", y)
-		y = CreateCheckbox(pnl, "Show offensive Echoes", "echoes_profanity", y)
-		y = CreateCheckbox(pnl, "Flash game window when a new Echo is created", "echoes_windowflash", y)
+		y, _ = CreateCheckbox(pnl, "Enable music", "echoes_music", y)
+		y, _ = CreateCheckbox(pnl, "Show read Echoes", "echoes_showread", y)
+		y, _ = CreateCheckbox(pnl, "Don't fade read echoes", "echoes_disablereadsys", y)
+		y, _ = CreateCheckbox(pnl, "Show offensive Echoes", "echoes_profanity", y)
+		y, _ = CreateCheckbox(pnl, "Flash game window when a new Echo is created", "echoes_windowflash", y)
 		if not EchoesSettings["echoes_immersivemode"] then
-			y = CreateCheckbox(pnl, "Notify when an echo is created on ANY map", "echoes_notifynew", y)
+			y, _ = CreateCheckbox(pnl, "Notify when an echo is created on ANY map", "echoes_notifynew", y)
 		end
 	end
 
 	do
 		local y = 20
 		local pnl = tabPanels[2]
-		y = CreateCheckbox(pnl, "Enable GabeN mode", "echoes_gabenmode", y)
-		y = CreateCheckbox(pnl, "Enable void Echoes", "echoes_enablevoidechoes", y)
-		y = CreateCheckbox(pnl, "Enable floating Echoes", "echoes_enableairechoes", y)
+		y, _ = CreateCheckbox(pnl, "Enable GabeN mode", "echoes_gabenmode", y)
+		y, _ = CreateCheckbox(pnl, "Enable void Echoes", "echoes_enablevoidechoes", y)
+		y, _ = CreateCheckbox(pnl, "Enable floating Echoes", "echoes_enableairechoes", y)
 		y = CreateSlider(pnl, "Movement Speed", GetConVar("echoes_speed"), 1, 1000, 0, y)
 	end
 
 	do
 		local y = 20
 		local pnl = tabPanels[3]
-		y = CreateCheckbox(pnl, "Enable smooth view", "echoes_smoothview", y)
-		y = CreateCheckbox(pnl, "Enable dynamic lights", "echoes_dlights", y)
+		y, _ = CreateCheckbox(pnl, "Enable smooth view", "echoes_smoothview", y)
+		y, _ = CreateCheckbox(pnl, "Enable dynamic lights", "echoes_dlights", y)
 		y = y - 13
 		y = CreateSlider(pnl, "Dynamic lights Brightness", GetConVar("echoes_dlights_brightness"), 0.1, 3, 0, y)
 		y = y + 5
 		y = CreateSlider(pnl, "Render Distance", GetConVar("echoes_renderdist"), 10000, 100000000, 0, y)
 		y = y + 5
-		y = CreateCheckbox(pnl, "Slow Echo activation", "echoes_slowactivate", y)
+		y, _ = CreateCheckbox(pnl, "Slow Echo activation", "echoes_slowactivate", y)
 		y = y + 5
-		y = CreateCheckbox(pnl, "Activate within FOV", "echoes_visibleonly", y)
+		y, _ = CreateCheckbox(pnl, "Activate within FOV", "echoes_visibleonly", y)
 		y = y - 13
 		y = CreateSlider(pnl, "Activation FOV", GetConVar("echoes_visiblefov"), 10, 180, 0, y, {10, 15, 20, 30, 45, 60, 90, 120, 150, 180})
 		y = y + 5
-		y = CreateCheckbox(pnl, "Hide author signatures", "echoes_disablesigning", y)
-		y = y + 25
-		y = CreateCheckbox(pnl, "Draw Hud", "cl_drawhud", y)
-		y = CreateCheckbox(pnl, "Hide Suit/Health/Ammo", "echoes_hidehud_suit", y)
-		y = CreateCheckbox(pnl, "Hide Crosshair", "echoes_hidehud_crosshair", y)
-		y = CreateCheckbox(pnl, "Hide Weapon Selection", "echoes_hidehud_weaponsel", y)
+		y, _ = CreateCheckbox(pnl, "Hide author signatures", "echoes_disablesigning", y)
+		y = y + 5
+		local sigOwnPanel
+		local y, sigColorsPanel = CreateCheckbox(pnl, "Show custom author signature colors", "echoes_showsignaturecolors", y, function(checked)
+			--sigOwnPanel:SetMouseInputEnabled(checked)
+			sigOwnPanel:SetAlpha(checked and 255 or 100)
+		end)
+		local y, sigOwnPanelTemp = CreateCheckbox(pnl, "Allow signature colors on own echoes", "echoes_allowsigsown", y)
+		sigOwnPanel = sigOwnPanelTemp
+		if not EchoesSettings["echoes_showsignaturecolors"] then
+			--sigOwnPanel:SetMouseInputEnabled(false)
+			sigOwnPanel:SetAlpha(100)
+		end
+		y = y + 5
+		y, _ = CreateCheckbox(pnl, "Draw Hud", "cl_drawhud", y)
+		y, _ = CreateCheckbox(pnl, "Hide Suit/Health/Ammo", "echoes_hidehud_suit", y)
+		y, _ = CreateCheckbox(pnl, "Hide Crosshair", "echoes_hidehud_crosshair", y)
+		y, _ = CreateCheckbox(pnl, "Hide Weapon Selection", "echoes_hidehud_weaponsel", y)
 	end
 
 	do
@@ -414,7 +197,7 @@ local totalTabsWidth = 0
 		local immersionHeight = CalculateWrappedHeight(ImmersionLabel, ImmersionLabel:GetText(), ImmersionLabel:GetWide())
 		y = y + immersionHeight + 5
 
-		y = CreateCheckbox(pnl, "Immersive Mode", "echoes_immersivemode", y)
+		y, _ = CreateCheckbox(pnl, "Immersive Mode", "echoes_immersivemode", y)
 
 		y = y + 10
 
@@ -429,12 +212,12 @@ local totalTabsWidth = 0
 		local sandboxHeight = CalculateWrappedHeight(SandboxLabel, SandboxLabel:GetText(), SandboxLabel:GetWide())
 		y = y + sandboxHeight + 5
 
-		y = CreateCheckbox(pnl, "Inject Sandbox Functions (Spawnmenu, etc, Requires mapchange)", "echoes_allowsandbox", y)
+		y, _ = CreateCheckbox(pnl, "Inject Sandbox Functions (Spawnmenu, etc, Requires mapchange)", "echoes_allowsandbox", y)
 
 		if not EchoesSettings["echoes_immersivemode"] then
 			y = y + 20
-			y = CreateCheckbox(pnl, "Bypass placement checks (void, ground, etc)", "echoes_bypasschecks", y)
-			y = CreateCheckbox(pnl, "Debug info", "echoes_debuginfo", y)
+			y, _ = CreateCheckbox(pnl, "Bypass placement checks (void, ground, etc)", "echoes_bypasschecks", y)
+			y, _ = CreateCheckbox(pnl, "Debug info", "echoes_debuginfo", y)
 			y = y + 20
 		end
 
@@ -525,7 +308,7 @@ local totalTabsWidth = 0
 		local scaryHeight = CalculateWrappedHeight(scaryLabel, scaryLabel:GetText(), scaryLabel:GetWide())
 		y = y + scaryHeight + 5
 
-		y = CreateCheckbox(pnl, "Scary mode (dark, disables static lighting, new music)", "echoes_scarymode", y, function(checked)
+		y, _ = CreateCheckbox(pnl, "Scary mode (dark, disables static lighting, new music)", "echoes_scarymode", y, function(checked)
 			ApplyScaryMode(checked)
 		end)
 
@@ -540,7 +323,7 @@ local totalTabsWidth = 0
 		local draftsLabelHeight = CalculateWrappedHeight(draftsLabel, draftsLabel:GetText(), draftsLabel:GetWide())
 		y = y + draftsLabelHeight + 5
 
-		y = CreateCheckbox(pnl, "Enable drafts (Make echoes on cooldown)", "echoes_enable_drafts", y)
+		y, _ = CreateCheckbox(pnl, "Enable drafts (Make echoes on cooldown)", "echoes_enable_drafts", y)
 
 		local draftsInfo = vgui.Create("DLabel", pnl)
 		draftsInfo:SetText("Drafts allow creating up to 3 echoes while on cooldown, Drafts can be seen in personal echoes menu.")

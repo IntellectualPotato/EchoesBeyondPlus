@@ -2,7 +2,7 @@
 -- A simple changelog menu
 local PANEL = {}
 local vignette = Material("echoesbeyond/vignette.png")
-local changelogID = "RMcheckboxAddNames"
+local changelogID = "MapMenuImprovesAndSuch"
 
 function PANEL:Init()
 	if (IsValid(changeLog)) then
@@ -53,13 +53,11 @@ function PANEL:Init()
 	end
 
 	changelog:SetText([[
-		- Updated settings menu to have new custom checkbox's and sliders to improve continuity
-		- Offensive echoes have a slightly different read color
-		- Added an option to where you have to look at an echo in a specified FOV to activate it
-		- Added more lenient map searching (searching for gm_construct, gm construct, gmconstruct yields same results)
-		- Filtered out your own echoes from ReadEchoes + Added own echoes to COmmunity Menu total count
-		- Fix tab menu sometimes being unable to be opened (hopefully)
-		- Few community wall names
+		- Map menu impprovements: Condensed to positive/negative filters, new sort method, sort dropdown!
+		- Added signature colors! can be toggled in visual options (feel free to request a RGB color!)
+		- Signature colors tint names in community menu vaguely
+		- Couple community wall names
+		- Fixed read offsets with floating echoes disabled
 	]])
 
 	local close = vgui.Create("DButton", self)

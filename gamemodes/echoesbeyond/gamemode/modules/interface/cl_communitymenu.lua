@@ -216,6 +216,16 @@ function PANEL:Init()
 					end
 				end
 				label:Center()
+				local sigColor = GetSignatureColor(name:lower())
+				if sigColor then
+					local tinted = Color(
+						Lerp(0.2, 255, sigColor.r),
+						Lerp(0.2, 255, sigColor.g),
+						Lerp(0.2, 255, sigColor.b),
+						255
+					)
+					label:SetTextColor(tinted)
+				end
 			end
 		end
 
@@ -264,7 +274,8 @@ function PANEL:Init()
 	AddRowToScroll("Dark", "Jame", "Mo")
 	AddRowToScroll("A.G.A.", "qdshuck", "TotallyNotEd")
 	AddRowToScroll("Avis", "Traya Tyto", "Whatwat")
-	AddRowToScroll("MidnightGamer","Gatecat 13","")
+	AddRowToScroll("MidnightGamer","Gatecat 13","Markku")
+	AddRowToScroll("","GoldBrick","")
 	y = y + namesScrollPanel:GetTall() + 10
 
 	local communityHeightScaled = (373 / 1000) * self:GetWide()

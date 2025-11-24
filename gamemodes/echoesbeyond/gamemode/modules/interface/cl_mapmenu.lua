@@ -1,3 +1,4 @@
+include("cl_widgets.lua")
 local vignette = Material("echoesbeyond/vignette.png", "smooth")
 
 -- The map menu
@@ -92,89 +93,51 @@ function PANEL:Init()
 		surface.DrawOutlinedRect(0, 0, width, height, 1)
 	end
 
-	local filterY = 10
-	local filterSpacing = 20
 	local leftColumnX = 10
 	local rightColumnX = filterPanel:GetWide() / 2 + 10
 
-	self.FilterShowOnlyEchoed = vgui.Create("DCheckBoxLabel", filterPanel)
-	self.FilterShowOnlyEchoed:SetText("Show only echoed on")
-	self.FilterShowOnlyEchoed:SetPos(leftColumnX, filterY)
-	self.FilterShowOnlyEchoed:SetValue(0)
-	self.FilterShowOnlyEchoed.OnChange = function()
-		if self.FilterShowOnlyEchoed:GetChecked() then
-			self.FilteshowOnlyNotEchoed:SetValue(0)
+	local sortLabel = vgui.Create("DLabel", filterPanel)
+	sortLabel:SetText("Sort by:")
+	sortLabel:SetFont("DermaDefault")
+	sortLabel:SizeToContents()
+	sortLabel:SetPos(leftColumnX, 18)
+	sortLabel:SetColor(Color(200, 200, 200))
+
+	_, self.SortDropdown = CreateDropdown(filterPanel, {"Echo count", "My Echo count", "Percentage read"}, 1, 18, function(selected)
+		self:ListMaps(searchBar:GetValue())
+	end, leftColumnX + 50)
+
+	local helpText = vgui.Create("DLabel", filterPanel)
+	helpText:SetText("Left click to check, right click to invert filter")
+	helpText:SetFont("DermaDefault")
+	helpText:SizeToContents()
+	helpText:SetPos(10, 45)
+	helpText:SetColor(Color(150, 150, 150))
+
+	_, self.FilterEchoed = CreateMultiCheckbox(filterPanel, "Echoed on", 65, function(state)
+		if state ~= 0 then self.FilterShowLocal:SetValue(false) end
+		self:ListMaps(searchBar:GetValue())
+	end, leftColumnX)
+
+	_, self.FilterInstalled = CreateMultiCheckbox(filterPanel, "Installed", 65, function(state)
+		if state ~= 0 then self.FilterShowLocal:SetValue(false) end
+		self:ListMaps(searchBar:GetValue())
+	end, rightColumnX)
+
+	_, self.FilterCompleted = CreateMultiCheckbox(filterPanel, "100% read", 85, function(state)
+		self:ListMaps(searchBar:GetValue())
+	end, leftColumnX)
+
+	_, self.FilterShowLocal = CreateSimpleCheckbox(filterPanel, "Show local", false, 85, function(checked)
+		if checked then
+			self.FilterInstalled:SetState(0)
+			self.FilterEchoed:SetState(0)
 		end
 		self:ListMaps(searchBar:GetValue())
-	end
-
-	self.SortByPersonalEchoes = vgui.Create("DCheckBoxLabel", filterPanel)
-	self.SortByPersonalEchoes:SetText("Sort by my echo count")
-	self.SortByPersonalEchoes:SetPos(leftColumnX, filterY + filterSpacing)
-	self.SortByPersonalEchoes:SetValue(0)
-	self.SortByPersonalEchoes.OnChange = function()
-		self:ListMaps(searchBar:GetValue())
-	end
-
-	self.FilterHideCompleted = vgui.Create("DCheckBoxLabel", filterPanel)
-	self.FilterHideCompleted:SetText("Hide 100% read")
-	self.FilterHideCompleted:SetPos(leftColumnX, filterY + filterSpacing * 2)
-	self.FilterHideCompleted:SetValue(0)
-	self.FilterHideCompleted.OnChange = function()
-		self:ListMaps(searchBar:GetValue())
-	end
-
-	self.FilteshowOnlyNotEchoed = vgui.Create("DCheckBoxLabel", filterPanel)
-	self.FilteshowOnlyNotEchoed:SetText("Show only not echoed on")
-	self.FilteshowOnlyNotEchoed:SetPos(rightColumnX, filterY)
-	self.FilteshowOnlyNotEchoed:SetValue(0)
-	self.FilteshowOnlyNotEchoed.OnChange = function()
-		if self.FilteshowOnlyNotEchoed:GetChecked() then
-			self.FilterShowOnlyEchoed:SetValue(0)
-		end
-		self:ListMaps(searchBar:GetValue())
-	end
-
-	self.FilterInstalledOnly = vgui.Create("DCheckBoxLabel", filterPanel)
-	self.FilterInstalledOnly:SetText("Installed Only")
-	self.FilterInstalledOnly:SetPos(rightColumnX, filterY + filterSpacing)
-	self.FilterInstalledOnly:SetValue(0)
-	self.FilterInstalledOnly.OnChange = function()
-		if self.FilterInstalledOnly:GetChecked() then
-			self.FilterUninstalledOnly:SetValue(0)
-			self.FilterShowLocal:SetValue(0)
-		end
-		self:ListMaps(searchBar:GetValue())
-	end
-
-	self.FilterUninstalledOnly = vgui.Create("DCheckBoxLabel", filterPanel)
-	self.FilterUninstalledOnly:SetText("Uninstalled Only")
-	self.FilterUninstalledOnly:SetPos(rightColumnX, filterY + filterSpacing * 2)
-	self.FilterUninstalledOnly:SetValue(0)
-	self.FilterUninstalledOnly.OnChange = function()
-		if self.FilterUninstalledOnly:GetChecked() then
-			self.FilterInstalledOnly:SetValue(0)
-			self.FilterShowLocal:SetValue(0)
-		end
-		self:ListMaps(searchBar:GetValue())
-	end
-
-	self.FilterShowLocal = vgui.Create("DCheckBoxLabel", filterPanel)
-	self.FilterShowLocal:SetText("Show local")
-	self.FilterShowLocal:SetPos(leftColumnX, filterY + filterSpacing * 3)
-	self.FilterShowLocal:SetValue(0)
-	self.FilterShowLocal.OnChange = function()
-		if self.FilterShowLocal:GetChecked() then
-			self.FilterInstalledOnly:SetValue(0)
-			self.FilterUninstalledOnly:SetValue(0)
-			self.FilterShowOnlyEchoed:SetValue(0)
-			self.FilteshowOnlyNotEchoed:SetValue(0)
-		end
-		self:ListMaps(searchBar:GetValue())
-	end
+	end, rightColumnX)
 
 	--panel height to fit content
-	filterPanel:SetTall(filterY + filterSpacing * 4 + 10)
+	filterPanel:SetTall(110)
 
 	--reference to filter panel for closing
 	self.filterPanel = filterPanel
@@ -210,13 +173,11 @@ function PANEL:ListMaps(filter)
 
 	self.mapList = {}
 
-	local showEchoed = self.FilterShowOnlyEchoed and self.FilterShowOnlyEchoed:GetChecked()
-	local showNotEchoed = self.FilteshowOnlyNotEchoed and self.FilteshowOnlyNotEchoed:GetChecked()
-	local showInstalled = self.FilterInstalledOnly and self.FilterInstalledOnly:GetChecked()
-	local showUninstalled = self.FilterUninstalledOnly and self.FilterUninstalledOnly:GetChecked()
-	local sortByPersonalEchoes = self.SortByPersonalEchoes and self.SortByPersonalEchoes:GetChecked()
+	local echoedFilter = self.FilterEchoed and self.FilterEchoed:GetState() or 0
+	local installFilter = self.FilterInstalled and self.FilterInstalled:GetState() or 0
+	local sortMode = self.SortDropdown and self.SortDropdown:GetSelected() or 1
 	local showLocal = self.FilterShowLocal and self.FilterShowLocal:GetChecked()
-	local hideCompleted = self.FilterHideCompleted and self.FilterHideCompleted:GetChecked()
+	local completedFilter = self.FilterCompleted and self.FilterCompleted:GetState() or 0
 
 	local mapPairs
 	if (showLocal) then
@@ -226,14 +187,23 @@ function PANEL:ListMaps(filter)
 		end
 		table.sort(mapPairs, function(a, b) return a.name:lower() < b.name:lower() end)
 	else
-		if sortByPersonalEchoes then
+		if sortMode == 2 then  --my Echo count
 			local t = {}
 			for name, amount in pairs(mapList) do
 				t[#t+1] = {name=name, amount=amount, personal=EchoesOnMaps and EchoesOnMaps[name] or 0}
 			end
 			table.SortByMember(t, "personal", false)
 			mapPairs = t
-		else
+		elseif sortMode == 3 then  --percentage read
+			local t = {}
+			for name, amount in pairs(mapList) do
+				local read = readMapCounts[name] or 0
+				local percentage = amount > 0 and (read / amount) * 100 or 0
+				t[#t+1] = {name=name, amount=amount, percentage=percentage}
+			end
+			table.SortByMember(t, "percentage", false)
+			mapPairs = t
+		else  --echo count (default)
 			mapPairs = {}
 			for name, amount in SortedPairsByValue(mapList, true) do
 				mapPairs[#mapPairs+1] = {name=name, amount=amount}
@@ -262,10 +232,9 @@ function PANEL:ListMaps(filter)
 		local notEchoed = not (EchoesOnMaps and EchoesOnMaps[name] and EchoesOnMaps[name] > 0)
 		local installed = self.installedMaps[name]
 
-		if showEchoed and not echoed then continue end
-		if showNotEchoed and not notEchoed then continue end
-		if showInstalled and not installed then continue end
-		if showUninstalled and installed then continue end
+		if echoedFilter == 1 and not echoed then continue elseif echoedFilter == 2 and echoed then continue end
+		if installFilter == 1 and not installed then continue elseif installFilter == 2 and installed then continue end
+		if completedFilter == 1 and not isCompleted then continue elseif completedFilter == 2 and isCompleted then continue end
 
 		local entry = vgui.Create("DPanel", self.mapListPanel)
 		entry:Dock(TOP)
@@ -369,6 +338,12 @@ function PANEL:Close(bNoSound)
 	timer.Remove("echoesMapUpdater")
 
 	if IsValid(self.filterPanel) then
+		--close any open dropdowns ( ihate this so much)
+		if self.SortDropdown and self.SortDropdown.CloseDropdown then
+			self.SortDropdown:CloseDropdown()
+		end
+		--disable input too
+		self.filterPanel:SetMouseInputEnabled(false)
 		self.filterPanel:AlphaTo(0, 0.25, 0, function()
 			self.filterPanel:Remove()
 		end)

@@ -18,6 +18,14 @@ cvars.AddChangeCallback("echoes_disablesigning", function(name, old, new)
     end
 end, "echoes_disablesigning")
 
+cvars.AddChangeCallback("echoes_showsignaturecolors", function(name, old, new)
+    ReloadEchoColors()
+end, "echoes_showsignaturecolors")
+
+cvars.AddChangeCallback("echoes_allowsigsown", function(name, old, new)
+    ReloadEchoColors()
+end, "echoes_allowsigsown")
+
 local gabenNodeSounds = {
 	"/gaben/al_intro",
 	"/gaben/hl2_intro",
@@ -193,9 +201,58 @@ local skins = {
             x_coords = {-1200-75, -960, -720+80}
         },
     },
-}
+   }
+   
+   local signatureColors = {
+    {color = Color(120, 200, 120), names = {"intellectualpotato", "i.p.", "intellecutalpotato"}}, --i suck at spelling my own name sometimes shush
+    --{color = Color(20, 20, 200), names = {"m"}}, --Was legacy but i dont think its best to have 1 character signature colors
+    {color = Color(80, 0, 50), names = {"aether"}},
+    {color = Color(125, 64, 113), names = {"salithin"}}, --requested-new
+    {color = Color(200, 50, 50), names = {"run", "run!!!"}},
+    {color = Color(255, 105, 97), names = {"vivian"}},
+    {color = Color(160, 100, 50), names = {"muffin"}},
+    {color = Color(180, 180, 255), names = {"tomi"}},
+    {color = Color(255, 115, 20), names = {"mari"}},
+    {color = Color(5, 0, 5), names = {"dark"}},
+    {color = Color(50, 100, 80), names = {"mark", "markku"}},
+    {color = Color(170, 50, 170), names = {"akari"}},
+    {color = Color(87, 59, 183), names = {"dodeca"}},
+    {color = Color(100, 100, 150), names = {"lng1lnd"}},
+    {color = Color(0, 255, 0), names = {"panton_cleo"}},
+    {color = Color(255, 160, 232), names = {"skolli"}},
+    {color = Color(150, 41, 134), names = {"n.r."}}, --requested-new
+    {color = Color(255, 115, 50), names = {"fish"}},
+    {color = Color(0, 128, 128), names = {"lafta"}}, --requested-new
+    {color = Color(255, 105, 180), names = {"pix"}}, --requested-new
+    {color = Color(150, 150, 255), names = {"shimmer"}},
+    {color = Color(60, 180, 60), names = {"gecko"}},
+    {color = Color(65, 130, 95), names = {"den4ik17"}}, --requested-new
+    {color = Color(90, 100, 255), names = {"echoblu"}},
+	{color = Color(229, 175, 110), names = {"traya tyto"}},
+	{color = Color(101, 165, 227), names = {"hazmat141"}} --requested-new
+   }
+   
+   local function GetSignature(text)
+    local s, e = text:find("[%-~][^%-~]*$")
+    if not s then return nil end
 
-local function getSkin(echo)
+    local candidate = text:sub(s+1):match("^%s*(.-)%s*$")
+    if candidate and candidate:match("^[A-Za-z]") and #candidate <= 30 then
+    	return candidate:lower()
+    end
+    return nil
+   end
+
+   function GetSignatureColor(sig)
+    for _, entry in ipairs(signatureColors) do
+     for _, name in ipairs(entry.names) do
+      if name == sig then return entry.color end
+     end
+    end
+    return nil
+   end
+   
+   local function getSkin(echo)
 	return skins[echo.skin]
 end
 
@@ -367,8 +424,7 @@ local function UpdateEchoInteractions(inEchoes, curTimeSpeed, dt)
 		if (((echo.explicit and profanity) or !echo.explicit) and !echo.loading) then
 			local x, y, z = GetEchoPosition(echo)
 			local _, _, cameraZ = GetCameraPos()
-			local _, _, echoZ = echo.pos:Unpack()
-			local heightDiff = cameraZ - echoZ -32
+			local heightDiff = cameraZ - z -32
 			local predictedZOffset = activeZOffset + heightDiff
 
 			local shouldActivate = echo.distSqr < activationDist
@@ -629,16 +685,30 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 				echo.light_color = Color(255, 0, 255)
 				echo.readcolor = Color(100, 100, 100)
 				echo.readcolor_light = Color(25, 25, 25)
-			elseif bOwner then
-				echo.color = Color(255, 255, 0)
-				echo.light_color = Color(255, 255, 0)
-				echo.readcolor = Color(100, 100, 100)
-				echo.readcolor_light = Color(25, 25, 25)
 			else
-				echo.color = skin.color or Color(150, 255, 255)
-				echo.light_color = skin.color_light or echo.color
-				echo.readcolor = skin.readcolor or Color(100, 100, 100)
-				echo.readcolor_light = skin.readcolor_light or Color(25, 25, 25)
+				local sig = GetSignature(echo.text)
+				local sigColor = sig and GetSignatureColor(sig)
+				local useSigColor = EchoesSettings["echoes_showsignaturecolors"] and sigColor and (not bOwner or EchoesSettings["echoes_allowsigsown"])
+				if useSigColor then
+					echo.color = sigColor
+					echo.light_color = sigColor
+					echo.readcolor = Color(
+						Lerp(0.1, 100, sigColor.r),
+						Lerp(0.1, 100, sigColor.g),
+						Lerp(0.1, 100, sigColor.b)
+					)
+					echo.readcolor_light = Color(25, 25, 25)
+				elseif bOwner then
+					echo.color = Color(255, 255, 0)
+					echo.light_color = Color(255, 255, 0)
+					echo.readcolor = Color(100, 100, 100)
+					echo.readcolor_light = Color(25, 25, 25)
+				else
+					echo.color = skin.color or Color(150, 255, 255)
+					echo.light_color = skin.color_light or echo.color
+					echo.readcolor = skin.readcolor or Color(100, 100, 100)
+					echo.readcolor_light = skin.readcolor_light or Color(25, 25, 25)
+				end
 			end
 		end
 

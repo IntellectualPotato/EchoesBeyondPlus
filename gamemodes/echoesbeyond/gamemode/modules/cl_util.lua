@@ -207,4 +207,22 @@ function UpdateEchoesOnMaps()
 		EchoesOnMaps[v.map] = EchoesOnMaps[v.map] + 1
 	end
 end
+function CalculateWrappedHeight(label, text, width)
+    surface.SetFont(label:GetFont())
+    local _, lineHeight = surface.GetTextSize("A")
+    local words = string.Explode(" ", text)
+    local lines = 1
+    local currentLine = ""
+    for _, word in ipairs(words) do
+        local testLine = currentLine .. (currentLine == "" and "" or " ") .. word
+        local textWidth = surface.GetTextSize(testLine)
+        if textWidth > width then
+            lines = lines + 1
+            currentLine = word
+        else
+            currentLine = testLine
+        end
+    end
+    return lines * lineHeight
+end
 UpdateEchoesOnMaps()
