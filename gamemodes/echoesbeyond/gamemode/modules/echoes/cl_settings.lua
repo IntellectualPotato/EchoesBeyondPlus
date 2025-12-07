@@ -65,6 +65,7 @@ addSetting("echoes_visibleonly", "0", "Bool")
 addSetting("echoes_visiblefov", "180", "Int")
 addSetting("echoes_notifynew", "0", "Bool")
 addSetting("echoes_immersivemode", "1", "Bool")
+addSetting("echoes_enableparticles", "1", "Bool")
 
 local hudSettings = {"echoes_hidehud_suit", "echoes_hidehud_crosshair", "echoes_hidehud_weaponsel"}
 

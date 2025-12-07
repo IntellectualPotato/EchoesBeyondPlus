@@ -214,7 +214,7 @@ local skins = {
     {color = Color(180, 180, 255), names = {"tomi"}},
     {color = Color(255, 115, 20), names = {"mari"}},
     {color = Color(5, 0, 5), names = {"dark"}},
-    {color = Color(50, 100, 80), names = {"mark", "markku"}},
+    {color = Color(255, 117, 0), names = {"mark", "markku"}},
     {color = Color(170, 50, 170), names = {"akari"}},
     {color = Color(87, 59, 183), names = {"dodeca"}},
     {color = Color(100, 100, 150), names = {"lng1lnd"}},
@@ -229,7 +229,9 @@ local skins = {
     {color = Color(65, 130, 95), names = {"den4ik17"}}, --requested-new
     {color = Color(90, 100, 255), names = {"echoblu"}},
 	{color = Color(229, 175, 110), names = {"traya tyto"}},
-	{color = Color(101, 165, 227), names = {"hazmat141"}} --requested-new
+	{color = Color(101, 165, 227), names = {"hazmat141"}}, --requested-new
+	{color = Color(157, 0, 111), names = {"chlebiri"}}, --requested-new
+	{color = Color(255, 110, 231), names = {"artanis"}}, --requested-new
    }
    
    local function GetSignature(text)
@@ -437,6 +439,32 @@ local function UpdateEchoInteractions(inEchoes, curTimeSpeed, dt)
 
 			if shouldActivate then
 
+				if EchoesSettings["echoes_enableparticles"] then
+					local x, y, z = GetEchoPosition(echo)
+					local pos = Vector(x, y, z + (echo.z_offset or 0))
+					if not echo.emitter then
+						echo.emitter = ParticleEmitter(pos)
+					end
+					if CurTime() % 0.1 < 0.003 then
+						local dir = VectorRand():GetNormalized()
+						local dist = math.Rand(0, 5)
+						local vPos = pos + dir * dist
+						local particle = echo.emitter:Add("particle/particle_glow_04_additive", vPos)
+						if particle then
+							particle:SetVelocity(dir * 4)
+							particle:SetLifeTime(0)
+							particle:SetDieTime(math.Rand(3,5))
+							particle:SetStartAlpha(5)
+							particle:SetEndAlpha(0)
+							particle:SetStartSize(math.random(4,7))
+							particle:SetEndSize(0)
+							particle:SetColor(200,200,200)
+							particle:SetAirResistance(10)
+							particle:SetGravity(Vector(0,0,-1))
+							particle:SetCollide(false)
+						end
+					end
+				end
 
 				local active = math.min(echo.active + dt * activateSpeed, 1)
 
@@ -473,6 +501,11 @@ local function UpdateEchoInteractions(inEchoes, curTimeSpeed, dt)
 					WriteEchoes(savedData)
 				end
 			else
+				if echo.emitter then
+					echo.emitter:Finish()
+					echo.emitter = nil
+				end
+
 				echo.active = math.max(echo.active - dt * 0.5, 0)
 				echo.z_offset = Lerp(dt * 1.5, echo.z_offset, (read and -readZOffset or 0))
 
@@ -481,6 +514,7 @@ local function UpdateEchoInteractions(inEchoes, curTimeSpeed, dt)
 				end
 			end
 		end
+
 	end
 end
 
@@ -978,6 +1012,7 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 
 		render.PopFilterMag()
 		render.PopFilterMin()
+
 	end
 end)
 

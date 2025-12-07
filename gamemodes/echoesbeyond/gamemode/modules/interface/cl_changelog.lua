@@ -2,7 +2,7 @@
 -- A simple changelog menu
 local PANEL = {}
 local vignette = Material("echoesbeyond/vignette.png")
-local changelogID = "MapMenuImprovesAndSuch"
+local changelogID = "ebplusColorsAndNames"
 
 function PANEL:Init()
 	if (IsValid(changeLog)) then
@@ -53,11 +53,7 @@ function PANEL:Init()
 	end
 
 	changelog:SetText([[
-		- Map menu impprovements: Condensed to positive/negative filters, new sort method, sort dropdown!
-		- Added signature colors! can be toggled in visual options (feel free to request a RGB color!)
-		- Signature colors tint names in community menu vaguely
-		- Couple community wall names
-		- Fixed read offsets with floating echoes disabled
+		- Mini update: Just adding some names to the community wall and some signature colors (i don't want to make you guys wait for a big update) + optional particles option (may be ugly)
 	]])
 
 	local close = vgui.Create("DButton", self)

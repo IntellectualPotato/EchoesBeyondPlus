@@ -150,6 +150,7 @@ local totalTabsWidth = 0
 		local y = 20
 		local pnl = tabPanels[3]
 		y, _ = CreateCheckbox(pnl, "Enable smooth view", "echoes_smoothview", y)
+		y, _ = CreateCheckbox(pnl, "Enable particles", "echoes_enableparticles", y)
 		y, _ = CreateCheckbox(pnl, "Enable dynamic lights", "echoes_dlights", y)
 		y = y - 13
 		y = CreateSlider(pnl, "Dynamic lights Brightness", GetConVar("echoes_dlights_brightness"), 0.1, 3, 0, y)
