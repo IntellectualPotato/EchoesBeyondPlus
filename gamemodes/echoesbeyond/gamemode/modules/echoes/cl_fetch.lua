@@ -139,6 +139,42 @@ function SyncPinnedStatus()
     end
 end
 
+local mapSkins = {
+	["gm_mttresort"] = "UTDR",
+	["ttt_mttresort_v2"] = "UTDR",
+	["gm_finalcorridor"] = "UTDR",
+	["gm_greenroom"] = "UTDR",
+	["undertaleyellowsnowdin"] = "UTDR",
+	["gm_uty_darkruins"] = "UTDR",
+	["gm_dlt_ridearoundtown"] = "UTDR",
+	["gm_voidplaces"] = "VoidPlaces",
+	["otherside"] = "VoidPlaces",
+	["rp_asheville"] = "Apocalypse",
+	["gm_city_of_silence"] = "Apocalypse"
+}
+
+local mapPrefixSkins = {
+	["tbg_"] = "tbg",
+	["vp_"] = "VoidPlaces",
+	["vpc_"] = "VoidPlaces",
+	["gm_deltarune"] = "UTDR",
+	["deltarune"] = "UTDR",
+	["hls"] = "hls"
+}
+
+local function DetermineDefaultSkin()
+	local map = game.GetMap() or ""
+	if mapSkins[map] then
+		return mapSkins[map]
+	end
+	for prefix, skin in pairs(mapPrefixSkins) do
+		if string.StartWith(map, prefix) then
+			return skin
+		end
+	end
+	return "default"
+end
+
 function FetchEchoes()
 	local map = game.GetMap()
 
@@ -304,42 +340,6 @@ function FetchEchoes()
 		end
 
 		IDsort()
-		
-		local mapSkins = {
-			["gm_mttresort"] = "UTDR",
-			["ttt_mttresort_v2"] = "UTDR",
-			["gm_finalcorridor"] = "UTDR",
-			["gm_greenroom"] = "UTDR",
-			["undertaleyellowsnowdin"] = "UTDR",
-			["gm_uty_darkruins"] = "UTDR",
-			["gm_dlt_ridearoundtown"] = "UTDR",
-			["gm_voidplaces"] = "VoidPlaces",
-			["otherside"] = "VoidPlaces",
-			["rp_asheville"] = "Apocalypse",
-			["gm_city_of_silence"] = "Apocalypse"
-		}
-
-		local mapPrefixSkins = {
-			["tbg_"] = "tbg",
-			["vp_"] = "VoidPlaces",
-			["vpc_"] = "VoidPlaces",
-			["gm_deltarune"] = "UTDR",
-			["deltarune"] = "UTDR",
-			["hls"] = "hls"
-		}
-
-		local function DetermineDefaultSkin()
-			local map = game.GetMap() or ""
-			if mapSkins[map] then
-				return mapSkins[map]
-			end
-			for prefix, skin in pairs(mapPrefixSkins) do
-				if string.StartWith(map, prefix) then
-					return skin
-				end
-			end
-			return "default"
-		end
 
 		local DefaultSkin = DetermineDefaultSkin()
 		local realEchoes = {}
