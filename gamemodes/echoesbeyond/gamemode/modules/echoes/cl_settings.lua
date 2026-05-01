@@ -48,7 +48,7 @@ function UpdateShouldShow() --New system to hide echoes in better way imo
 		echo.ShouldShow = true
 		if echo.explicit and not EchoesSettings["echoes_profanity"] then
 			echo.ShouldShow = false
-		elseif echo.read and not EchoesSettings["echoes_showread"] then
+	    elseif echo.read and not EchoesSettings["echoes_showread"] and not (CurTime() < (echo.readTime or 0) + 30) then
 			echo.ShouldShow = false
 		elseif echo.inVoid and not EchoesSettings["echoes_enablevoidechoes"] then
 			echo.ShouldShow = false

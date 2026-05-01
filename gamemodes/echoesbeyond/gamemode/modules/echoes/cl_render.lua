@@ -409,7 +409,6 @@ local function UpdateEchoInteractions(inEchoes, curTimeSpeed, dt)
 	local activeZOffset = 24 + breathLayer
 	local readZOffset = 20
 	local gabenMode = EchoesSettings["echoes_gabenmode"]
-	local profanity = EchoesSettings["echoes_profanity"]
 	local slowActivate = EchoesSettings["echoes_slowactivate"]
 	local activateSpeed = slowActivate and 1.5 or 3
 	local cx, cy, cz = GetCameraPos()
@@ -426,7 +425,7 @@ local function UpdateEchoInteractions(inEchoes, curTimeSpeed, dt)
 		local read = echo.read and !disableReadSys
 		local bOwner = echo.isOwner
 
-		if (((echo.explicit and profanity) or !echo.explicit) and !echo.loading) then
+		if (!echo.loading and echo.ShouldShow ~= false) then
 			local x, y, z = GetEchoPosition(echo)
 			local _, _, cameraZ = GetCameraPos()
 			local heightDiff = cameraZ - z -32
