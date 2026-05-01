@@ -162,6 +162,7 @@ function WriteEchoes(t)
 		local id = tonumber(t[i])
 		if id and not seen[id] then out[#out + 1] = id; seen[id] = true end
 	end
+	if #out == 0 or #out < #t then return end -- Prevent writing if empty or entries missing due to invalid data
 	file.CreateDir("echoesbeyond")
 	file.Write("echoesbeyond/readechoes_plus.txt", table.concat(out, "\n"))
 end
