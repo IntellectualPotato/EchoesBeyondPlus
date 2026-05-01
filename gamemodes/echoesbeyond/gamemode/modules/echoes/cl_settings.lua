@@ -1,7 +1,7 @@
 EchoesSettings = {}
 EchoesHUDHide = {}
 
-local function addSetting(name, default, getType)
+local function addSetting(name, default, getType, onChange)
     local cvar = CreateClientConVar(name, default, true, false)
     local value = cvar["Get" .. getType](cvar)
     EchoesSettings[name] = value
@@ -11,9 +11,12 @@ local function addSetting(name, default, getType)
             EchoesSettings[name] = (new == "1")
         elseif getType == "Int" then
             EchoesSettings[name] = tonumber(new)
+        elseif getType == "Float" then
+            EchoesSettings[name] = tonumber(new)
         else
             EchoesSettings[name] = new
         end
+        if onChange then onChange(new) end
     end, "EchoesSettings_" .. name)
 end
 
@@ -39,7 +42,24 @@ local function UpdateHUDHideTable()
     EchoesHUDHide = hide
 end
 
-addSetting("echoes_showread", "1", "Bool")
+function UpdateShouldShow() --New system to hide echoes in better way imo
+	for _, echo in ipairs(echoes) do
+		echo.ShouldShow = true
+		if echo.explicit and not EchoesSettings["echoes_profanity"] then
+			echo.ShouldShow = false
+		elseif echo.read and not EchoesSettings["echoes_showread"] then
+			echo.ShouldShow = false
+		elseif echo.inVoid and not EchoesSettings["echoes_enablevoidechoes"] then
+			echo.ShouldShow = false
+		elseif echo.failed then
+			echo.ShouldShow = false
+		end
+	end
+end
+
+addSetting("echoes_showread", "1", "Bool", function(new)
+	UpdateShouldShow()
+end)
 addSetting("echoes_renderdist", "25000000", "Int")
 addSetting("echoes_disablereadsys", "0", "Bool")
 addSetting("echoes_disablesigning", "0", "Bool")
@@ -50,10 +70,14 @@ addSetting("echoes_bypasschecks", "0", "Bool")
 addSetting("echoes_debuginfo", "0", "Bool")
 addSetting("echoes_dlights", "1", "Bool")
 addSetting("echoes_dlights_brightness", "3", "Int")
-addSetting("echoes_enablevoidechoes", "0", "Bool")
+addSetting("echoes_enablevoidechoes", "0", "Bool", function(new)
+	UpdateShouldShow()
+end)
 addSetting("echoes_enableairechoes", "1", "Bool")
 addSetting("echoes_enable_drafts", "0", "Bool")
-addSetting("echoes_profanity", "0", "Bool")
+addSetting("echoes_profanity", "0", "Bool", function(new)
+	UpdateShouldShow()
+end)
 addSetting("echoes_music", "1", "Bool")
 addSetting("echoes_smoothview", "1", "Bool")
 addSetting("echoes_speed", "100", "Int")
@@ -79,6 +103,7 @@ for _, setting in ipairs(hudSettings) do
 end
 
 UpdateHUDHideTable()
+UpdateShouldShow()
 
 local previousSkyName = nil
 local previousMatSpecular = nil
