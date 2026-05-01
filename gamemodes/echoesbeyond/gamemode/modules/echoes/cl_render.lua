@@ -204,7 +204,7 @@ local skins = {
    }
    
    local signatureColors = {
-    {color = Color(120, 200, 120), names = {"intellectualpotato", "i.p.", "intellecutalpotato"}}, --i suck at spelling my own name sometimes shush
+    {color = Color(120, 200, 120), names = {"intellectualpotato", "i.p.", "intellecutalpotato", "intelelctualpotato"}}, --i suck at spelling my own name sometimes shush
     --{color = Color(20, 20, 200), names = {"m"}}, --Was legacy but i dont think its best to have 1 character signature colors
     {color = Color(80, 0, 50), names = {"aether"}},
     {color = Color(125, 64, 113), names = {"salithin"}}, --requested-new
@@ -219,7 +219,7 @@ local skins = {
     {color = Color(87, 59, 183), names = {"dodeca"}},
     {color = Color(100, 100, 150), names = {"lng1lnd"}},
     {color = Color(0, 255, 0), names = {"panton_cleo"}},
-    {color = Color(255, 160, 232), names = {"skolli"}},
+    {color = Color(255, 160, 232), names = {"skolli", "skoli"}},
     {color = Color(150, 41, 134), names = {"n.r."}}, --requested-new
     {color = Color(255, 115, 50), names = {"fish"}},
     {color = Color(0, 128, 128), names = {"lafta"}}, --requested-new
@@ -232,6 +232,9 @@ local skins = {
 	{color = Color(101, 165, 227), names = {"hazmat141"}}, --requested-new
 	{color = Color(157, 0, 111), names = {"chlebiri"}}, --requested-new
 	{color = Color(255, 110, 231), names = {"artanis"}}, --requested-new
+	{color = Color(242, 242, 162), names = {"m.d."}}, --requested-new
+    {color = Color(255,95,0), names = {"g3"}}, --requested-new
+    {color = Color( 255, 255, 125), names = {"goldbrick"}}, --requested-new
    }
    
    local function GetSignature(text)
@@ -288,7 +291,7 @@ local function UpdateEchoVisibilityStates()
 			echo.creationTime = curTime + 0.01 * (#echoes - _)
 		end
 
-		local canFadeIn = inRange and curTime >= echo.creationTime
+		local canFadeIn = inRange and curTime >= echo.creationTime and (echo.ShouldShow ~= false or (echo.read and curTime < (echo.readTime or 0) + 30))
 
 		if canFadeIn then
 			echo.init = math.min((echo.init or 0) + FrameTime(), 1)
@@ -491,6 +494,7 @@ local function UpdateEchoInteractions(inEchoes, curTimeSpeed, dt)
 					savedData[#savedData + 1] = echo.id
 
 					echo.read = true
+					echo.readTime = CurTime()
 
 					readEchoCount = readEchoCount + 1
 
@@ -783,9 +787,9 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 			local dLight = DynamicLight(echo.id)
 			if (dLight) then
 				dLight.Pos = echo.drawPos
-				dLight.r = partyMode and echo.partyColor and echo.partyColor.r or r
-				dLight.g = partyMode and echo.partyColor and echo.partyColor.g or g
-				dLight.b = partyMode and echo.partyColor and echo.partyColor.b or b
+				dLight.r = partyMode and echo.color.r or r
+				dLight.g = partyMode and echo.color.g or g
+				dLight.b = partyMode and echo.color.b or b
 				dLight.Brightness = DlightBright
 				dLight.Size = 256 * (((lightRenderDist - echoDistSqr) / lightRenderDist) * echo.init) * (alpha / 255)
 				dLight.Decay = 1000
@@ -798,7 +802,7 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 		ComputeEchoMtx(echo_mtx, echo.drawPos, echo._angle, 0.1)
 		cam.PushModelMatrix(echo_mtx, true)
 		
-		local finalColor = partyMode and echo.partyColor or drawColor
+		local finalColor = partyMode and echo.color or drawColor
 
 		--logic for skins with a custom read texture
 		if (skin.mat_read) then

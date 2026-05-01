@@ -88,7 +88,7 @@ else
 		for _, echo in ipairs(echoes) do
 			if echo.id == -1 and not echo.isDraft then continue end
 			if (createPos:Distance(echo.pos) >= 75) then continue end
-			if echo.explicit and not profanity then --Used to just not check if the echo was explicit
+			if not echo.ShouldShow then --Used to just not check if the echo was explicit (or other)
 				EchoNotify("A good message needs an identity of its own. You are too close to an Echo you cannot see.")
 				return
 			end

@@ -30,7 +30,10 @@ function InitPartyMode(msg, milestone)
 
 			for i = 1, #echoes do
 				local echo = echoes[i]
-				echo.partyColor = Color(math.random(255), math.random(255), math.random(255))
+				echo.color = Color(math.random(255), math.random(255), math.random(255))
+				echo.light_color = echo.color
+				echo.readcolor_light = echo.color
+				echo.readcolor = echo.color
 				echo.partyOffset = Vector(math.random(-20, 20), math.random(-20, 20), math.random(-20, 20))
 			end
 
@@ -43,6 +46,7 @@ function InitPartyMode(msg, milestone)
 			LocalPlayer():StopSound("echoesbeyond/music/km_who_likes_to_party.mp3")
 			vignetteColor = color_black
 			endPartyEnabled = false
+			ReloadEchoColors()
 
 			if (!EchoesSettings["echoes_music"]) then return end
 
@@ -292,6 +296,7 @@ function FetchEchoes()
 		end
 
 		SyncPinnedStatus()
+		UpdateShouldShow()
 
 		--add back draft dummies only to echoes for visualization
 		for _, dummy in ipairs(draftDummies) do
@@ -299,7 +304,7 @@ function FetchEchoes()
 		end
 
 		IDsort()
-
+		
 		local mapSkins = {
 			["gm_mttresort"] = "UTDR",
 			["ttt_mttresort_v2"] = "UTDR",
@@ -352,7 +357,9 @@ function FetchEchoes()
 				echo.skin = "blueprint"
 			end
 		end
-		end, function(error)
+
+		ReloadEchoColors()
+	end, function(error)
 			EchoNotify(error)
 		end)
 	end
@@ -755,7 +762,7 @@ function CreateEcho(message, pos, isDraft)
 	end
 
 	-- Create the echo in anticipation of the server response
-	local DefaultSkin = "default"
+	local DefaultSkin = DetermineDefaultSkin()
 	echoes[#echoes + 1] = {
 		angle = Angle(0, 0, 90),
 		creationTime = curTime,
@@ -835,7 +842,7 @@ function CreateEcho(message, pos, isDraft)
 	end, {authorization = authToken})
 end
 
-function GetProjectedDraftSendTime(map)
+function GetProjectedDraftSendTime(map) --ALL code related to drafts SUCK and i cant do MATH at all and i hate all code related to it, bleh
 	if not map then map = game.GetMap() end
 	local currentTime = os.time()
 	local nextSlot = mapCooldowns[map] or currentTime

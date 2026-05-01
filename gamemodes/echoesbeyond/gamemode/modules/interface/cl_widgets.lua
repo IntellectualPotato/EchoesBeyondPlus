@@ -36,8 +36,11 @@ function CreateCheckbox(parent, text, convarName, y, onToggle)
     panel:SetMouseInputEnabled(true)
 
     local checked = false
-    if convarName == "echoes_allowsandbox" or convarName == "cl_drawhud" then
+    if convarName == "echoes_allowsandbox" or convarName == "cl_drawhud" or convarName == "r_WaterDrawRefraction" then
         checked = GetConVar(convarName):GetBool()
+        if convarName == "r_WaterDrawRefraction" then
+            checked = not checked
+        end
     else
         checked = EchoesSettings[convarName]
     end
@@ -61,6 +64,8 @@ function CreateCheckbox(parent, text, convarName, y, onToggle)
             net.SendToServer()
         elseif convarName == "cl_drawhud" then
             RunConsoleCommand("cl_drawhud", checked and "1" or "0")
+        elseif convarName == "r_WaterDrawRefraction" then
+            RunConsoleCommand("r_WaterDrawRefraction", checked and "0" or "1")
         else
             GetConVar(convarName):SetBool(checked)
         end
@@ -110,12 +115,25 @@ function CreateMultiCheckbox(parent, text, y, onChange, x)
     return y + panel:GetTall() + 5, panel  -- return y and the panel for reference
 end
 
-function CreateDropdown(parent, options, defaultIndex, y, onChange, x)
+function CreateDropdown(parent, options, defaultIndex, y, onChange, x, text)
     x = x or 50
     if not options or type(options) ~= "table" then options = {} end
     local panel = vgui.Create("DPanel", parent)
-    panel:SetSize(parent:GetWide() - 100, 25)
-    panel:SetPos(x, y)
+    local dropdownWidth = parent:GetWide() - 100
+    local dropdownX = x
+    local label = nil
+    if text then
+        label = vgui.Create("DLabel", parent)
+        label:SetText(text)
+        label:SetFont("DermaDefault")
+        label:SizeToContents()
+        label:SetPos(x, y + 6)
+        label:SetColor(Color(200, 200, 200))
+        dropdownX = x + label:GetWide() + 10
+        dropdownWidth = dropdownWidth - label:GetWide() - 10
+    end
+    panel:SetSize(dropdownWidth, 25)
+    panel:SetPos(dropdownX, y)
     panel:SetMouseInputEnabled(true)
 
     local selectedIndex = defaultIndex or 1
@@ -168,9 +186,15 @@ function CreateDropdown(parent, options, defaultIndex, y, onChange, x)
         end
     end
 
+    local useCanvas = false
+    if panel:GetParent():GetParent() and panel:GetParent():GetParent().GetVBar then
+        useCanvas = true
+    end
+    local optionParent = useCanvas and panel:GetParent() or panel:GetParent():GetParent()
+
     local optionPanels = {}
     for i, option in ipairs(options) do
-        local optionPanel = vgui.Create("DPanel", panel:GetParent():GetParent()) --hopefulyl lets things go outside the box!!!11
+        local optionPanel = vgui.Create("DPanel", optionParent)
         optionPanel:SetSize(panel:GetWide(), 25)
         optionPanel:SetVisible(false)
         optionPanel:SetMouseInputEnabled(true)
@@ -207,8 +231,12 @@ function CreateDropdown(parent, options, defaultIndex, y, onChange, x)
         for i, op in ipairs(optionPanels) do
             op:SetVisible(isOpen)
             if isOpen then
-                local px, py = s:GetParent():GetPos()  -- filterPanel position
-                op:SetPos(px + s:GetX(), py + s:GetY() + 25 + (i-1) * 25)
+                if useCanvas then
+                    op:SetPos(s:GetX(), s:GetY() + 25 + (i-1) * 25)
+                else
+                    local px, py = s:GetParent():GetPos()
+                    op:SetPos(px + s:GetX(), py + s:GetY() + 25 + (i-1) * 25)
+                end
             end
         end
     end

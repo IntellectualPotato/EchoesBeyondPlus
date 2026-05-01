@@ -96,16 +96,9 @@ function PANEL:Init()
 	local leftColumnX = 10
 	local rightColumnX = filterPanel:GetWide() / 2 + 10
 
-	local sortLabel = vgui.Create("DLabel", filterPanel)
-	sortLabel:SetText("Sort by:")
-	sortLabel:SetFont("DermaDefault")
-	sortLabel:SizeToContents()
-	sortLabel:SetPos(leftColumnX, 18)
-	sortLabel:SetColor(Color(200, 200, 200))
-
 	_, self.SortDropdown = CreateDropdown(filterPanel, {"Echo count", "My Echo count", "Percentage read"}, 1, 18, function(selected)
 		self:ListMaps(searchBar:GetValue())
-	end, leftColumnX + 50)
+	end, leftColumnX, "Sort by:")
 
 	local helpText = vgui.Create("DLabel", filterPanel)
 	helpText:SetText("Left click to check, right click to invert filter")

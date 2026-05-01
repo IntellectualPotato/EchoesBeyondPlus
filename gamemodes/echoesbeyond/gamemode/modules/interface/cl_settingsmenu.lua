@@ -5,7 +5,6 @@ local vignette = Material("echoesbeyond/vignette.png", "smooth")
 local PANEL = {}
 local lastOpenedTab = 1
 
-
 function PANEL:Init()
 	if (IsValid(settingsMenu)) then
 		settingsMenu:Remove()
@@ -181,6 +180,7 @@ local totalTabsWidth = 0
 		y, _ = CreateCheckbox(pnl, "Hide Suit/Health/Ammo", "echoes_hidehud_suit", y)
 		y, _ = CreateCheckbox(pnl, "Hide Crosshair", "echoes_hidehud_crosshair", y)
 		y, _ = CreateCheckbox(pnl, "Hide Weapon Selection", "echoes_hidehud_weaponsel", y)
+		y, _ = CreateCheckbox(pnl, "Disable water distortion", "r_WaterDrawRefraction", y)
 	end
 
 	do

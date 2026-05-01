@@ -1,5 +1,6 @@
 EchoesSettings = {}
 EchoesHUDHide = {}
+echoes = echoes or {} --Ensure we dont error if it hasnt gotten echoes yet
 
 local function addSetting(name, default, getType, onChange)
     local cvar = CreateClientConVar(name, default, true, false)
