@@ -308,12 +308,21 @@ local function UpdateEchoTextCache(inEchoes)
 		local skin = getSkin(echo)
 		local font = (skin and skin.font) or "TargetID"
 
+		local text = echo.text
+		if (disableSigning) then text = RemoveSigning(text) end
+
+		local sig = GetSignature(text)
+		if echo.cachedSig ~= sig then
+			echo.cachedSig = sig
+			echo.color = nil
+			echo.light_color = nil
+			echo.readcolor = nil
+			echo.readcolor_light = nil
+		end
+
 		-- If text is already cached with the correct font, skip it
 		if (echo.cachedText and echo.cachedFont == font) then continue end
 		echo.cachedFont = font
-
-		local text = echo.text
-		if (disableSigning) then text = RemoveSigning(text) end
 
 		local words = string.Explode(" ", text)
 		local lines = {}
