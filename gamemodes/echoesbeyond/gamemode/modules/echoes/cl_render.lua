@@ -60,7 +60,7 @@ local echoDotsMat = Material("echoesbeyond/echo_dots.png", "mips")
 local echoDotSingleMat = Material("echoesbeyond/echo_dot_single.png", "mips")
 local empty = Material("echoesbeyond/nothing.png", "mips")
 local echoPinMat = Material("echoesbeyond/echo_pin.png", "mips")
-local echoTranslateMat = Material("icon16/comments.png", "mips")
+local echoTranslateMat = Material("echoesbeyond/echo_translate.png", "mips")
 local echoOptionMat = Material("echoesbeyond/echo_option.png", "mips")
 local echoArrowMat = Material("echoesbeyond/echo_arrow.png", "mips") -- Added Arrow Material
 local lightRenderDist = 3000000 -- How far the dynamic light should render
@@ -259,6 +259,127 @@ local skins = {
    
    local function getSkin(echo)
 	return skins[echo.skin]
+end
+
+-- Maps Steam/GMod cl_language values to ISO 639-1 codes
+local steamLangToISO = {
+	english    = "en",
+	russian    = "ru",
+	german     = "de",
+	french     = "fr",
+	spanish    = "es",
+	latam      = "es",
+	portuguese = "pt",
+	brazilian  = "pt",
+	italian    = "it",
+	dutch      = "nl",
+	polish     = "pl",
+	czech      = "cs",
+	hungarian  = "hu",
+	roumanian  = "ro",
+	turkish    = "tr",
+	greek      = "el",
+	swedish    = "sv",
+	norwegian  = "no",
+	danish     = "da",
+	finnish    = "fi",
+	japanese   = "ja",
+	korean     = "ko",
+	koreana    = "ko",
+	schinese   = "zh-CN",
+	tchinese   = "zh-TW",
+	thai       = "th",
+	bulgarian  = "bg",
+	ukrainian  = "uk",
+	vietnamese = "vi",
+	arabic     = "ar",
+}
+
+local function GetTranslateTargetLang()
+	local steamLang = GetConVar("cl_language"):GetString():lower()
+
+	return steamLangToISO[steamLang] or "en"
+end
+
+-- Offline language detection: Unicode script blocks + distinctive Latin diacritics
+-- Returns an ISO 639-1 code if the language is detectable, or nil for plain ASCII / ambiguous text.
+-- Uses raw UTF-8 byte arithmetic to avoid requiring the bit library.
+-- I hate this with every fiber of my being and if it breaks I will kill myself
+local function DetectTextScript(text)
+	local i = 1
+	local n = #text
+
+	while i <= n do
+		local b1 = text:byte(i)
+
+		if (b1 < 0x80) then
+			i = i + 1
+		elseif (b1 >= 0xC2 and b1 <= 0xDF) then -- 2-byte UTF-8 sequence (U+0080 – U+07FF)
+			local b2 = text:byte(i + 1) or 0x80
+
+			if (b2 >= 0x80 and b2 <= 0xBF) then
+				local cp = (b1 - 0xC0) * 64 + (b2 - 0x80)
+
+				if (cp >= 0x0400 and cp <= 0x04FF) then return "ru" -- Cyrillic
+				elseif (cp >= 0x0370 and cp <= 0x03FF) then return "el" -- Greek
+				elseif (cp >= 0x0600 and cp <= 0x06FF) then return "ar" -- Arabic
+				elseif (cp == 0x00DF or cp == 0x00E4 or cp == 0x00F6 or
+				       cp == 0x00FC or cp == 0x00C4 or cp == 0x00D6 or
+				       cp == 0x00DC) then return "de" -- ß ä ö ü (German)
+				elseif (cp == 0x00F1 or cp == 0x00D1) then return "es" -- ñ (Spanish)
+				elseif (cp == 0x00E3 or cp == 0x00F5 or
+				       cp == 0x00C3 or cp == 0x00D5) then return "pt" -- ã õ (Portuguese)
+				elseif (cp == 0x0105 or cp == 0x0119 or cp == 0x0142 or
+				       cp == 0x0107 or cp == 0x0106 or cp == 0x0144 or
+				       cp == 0x015B or cp == 0x015A or cp == 0x017A or
+				       cp == 0x017C or cp == 0x017B) then return "pl" -- ą ę ł ć ś ź ż (Polish)
+				elseif (cp == 0x0151 or cp == 0x0150 or
+				       cp == 0x0171 or cp == 0x0170) then return "hu" -- ő ű (Hungarian)
+				elseif (cp == 0x015F or cp == 0x015E or
+				       cp == 0x011F or cp == 0x011E or
+				       cp == 0x0131 or cp == 0x0130) then return "tr" -- ş ğ ı (Turkish)
+				elseif (cp == 0x00E7 or cp == 0x00C7 or
+				       cp == 0x0153 or cp == 0x0152) then return "fr" -- ç œ (French)
+				end
+			end
+
+			i = i + 2
+		elseif (b1 >= 0xE0 and b1 <= 0xEF) then -- 3-byte UTF-8 sequence (U+0800 – U+FFFF)
+			local b2 = text:byte(i + 1) or 0x80
+			local b3 = text:byte(i + 2) or 0x80
+
+			if (b2 >= 0x80 and b2 <= 0xBF and b3 >= 0x80 and b3 <= 0xBF) then
+				local cp = (b1 - 0xE0) * 4096 + (b2 - 0x80) * 64 + (b3 - 0x80)
+
+				if (cp >= 0x3040 and cp <= 0x309F) then return "ja" -- Hiragana
+				elseif (cp >= 0x30A0 and cp <= 0x30FF) then return "ja" -- Katakana
+				elseif (cp >= 0x4E00 and cp <= 0x9FFF) then return "zh-CN" -- CJK Ideographs
+				elseif (cp >= 0xAC00 and cp <= 0xD7FF) then return "ko" -- Hangul
+				elseif (cp >= 0x0E00 and cp <= 0x0E7F) then return "th" -- Thai
+				end
+			end
+
+			i = i + 3
+		elseif (b1 >= 0xF0) then
+			i = i + 4
+		else
+			i = i + 1
+		end
+	end
+
+	return nil
+end
+
+local function UntranslateEcho(echo)
+	echo.text = echo.originalText
+	echo._detectedLang = nil  -- force re-detection from the restored original text
+	echo.originalText = nil
+	echo.translateDuration = nil
+	echo.color = nil
+	echo.cachedText = nil
+	echo.loading = false
+
+	EchoSound("echo_translate", 75, 0.5)
 end
 
 local function GetEchoPosition(echo)
@@ -544,11 +665,34 @@ end
 function TranslateEcho(echo)
     if echo.isTranslating then return end
 
+	-- Already translated: reverse it
+	if (echo.originalText) then
+		local delay = echo.translateDuration or 0
+
+		if (delay > 0) then
+			echo.isTranslating = true
+			echo.active = 0
+			echo.loading = true
+
+			EchoSound("echo_translate", 100)
+
+			timer.Simple(delay, function()
+				echo.isTranslating = false
+				UntranslateEcho(echo)
+			end)
+		else
+			UntranslateEcho(echo)
+		end
+
+		return
+	end
+
     echo.isTranslating = true
     echo.originalText = echo.originalText or echo.text
     echo.cachedText = nil
 	echo.active = 0
 	echo.loading = true
+	echo._translateStart = SysTime()
 	EchoSound("echo_translate_fast", 70, 0.5)
 
     local apiKey = "AIzaSyATBXajvzQLTDHEQbcpq0Ihe0vWDHmO520" --This is an official google api key, dw
@@ -574,15 +718,21 @@ function TranslateEcho(echo)
         
         success = function(code, body, headers)
             echo.isTranslating = false
+			echo.translateDuration = echo._translateStart and (SysTime() - echo._translateStart) or 0
+			echo._translateStart = nil
             if code == 200 then
                 local success, data = pcall(util.JSONToTable, body)
                 if success and data and data[1] and data[1][1] then
                     echo.text = string.gsub(data[1][1], "&#(%d+);", function(n) return string.char(tonumber(n)) end)
+					echo._detectedLang = nil  -- text changed; will re-detect if later untranslated
+					echo.color = nil
                 else
                     EchoNotify("Translation failed. (Invalid response)")
+					echo.originalText = nil
                 end
             else
                 EchoNotify("Translation failed. (HTTP " .. tostring(code) .. ")")
+				echo.originalText = nil
             end
             echo.cachedText = nil
 			echo.loading = false
@@ -596,6 +746,7 @@ function TranslateEcho(echo)
 			echo.loading = false
 			EchoSound("echo_translate_done", 120)
 			echo.originalText = nil
+			echo._translateStart = nil
         end
     }
 
@@ -647,6 +798,7 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 	local curTime = CurTime()
 	local curTimeSpeed = curTime * 1.5
 	local drawColor = Color(0, 0, 0)
+	local targetLang = GetTranslateTargetLang()
 
 	echoToGroundFrac = Lerp(frameTime * 2, echoToGroundFrac, enableAir and 0 or 1)
 
@@ -710,6 +862,14 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 		local explicit = echo.explicit
 		local skin = getSkin(echo)
 		local font = (skin and skin.font) or "TargetID"
+		local translated = echo.originalText != nil
+
+		-- Lazily detect the script/language of untranslated echoes (cached on the echo itself)
+		if (echo._detectedLang == nil and !translated) then
+			echo._detectedLang = DetectTextScript(echo.text) or "en" -- "en" = checked, plain ASCII / indeterminate Latin
+		end
+
+		local showTransIcon = ((echo._detectedLang and echo._detectedLang != targetLang) or translated)
 
 		-- This is probably a janky way of doing it for pixel ones but lolol
 		if (skin.point) then
@@ -721,7 +881,12 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 		end
 
 		if not echo.color then
-			if explicit then
+			if translated then
+				echo.color = Color(30, 80, 180)
+				echo.light_color = Color(30, 80, 180)
+				echo.readcolor = Color(20, 40, 80)
+				echo.readcolor_light = Color(10, 20, 40)
+			elseif explicit then
 				echo.color = Color(255, 50, 50)
 				echo.light_color = Color(255, 25, 25)
 				echo.readcolor = Color(100, 80, 80)
@@ -928,6 +1093,16 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 
 			end
 
+			cam.IgnoreZ(false)
+		end
+
+		-- translate badge
+		if (showTransIcon and alpha != 0) then
+			cam.IgnoreZ(true)
+			local transColor = 100 + 155 * active
+			surface.SetDrawColor(loading and Color(transColor, transColor, transColor, alpha) or finalColor)
+			surface.SetMaterial(echoTranslateMat)
+			surface.DrawTexturedRect(16, -80, 64, 64)
 			cam.IgnoreZ(false)
 		end
 
