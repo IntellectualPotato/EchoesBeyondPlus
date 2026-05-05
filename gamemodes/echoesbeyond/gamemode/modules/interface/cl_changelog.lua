@@ -2,7 +2,7 @@
 -- A simple changelog menu
 local PANEL = {}
 local vignette = Material("echoesbeyond/vignette.png")
-local changelogID = "ebplusColorsAndNames"
+local changelogID = "ebplusebupdatereal"
 
 function PANEL:Init()
 	if (IsValid(changeLog)) then
@@ -53,7 +53,10 @@ function PANEL:Init()
 	end
 
 	changelog:SetText([[
-		- Mini update: Just adding some names to the community wall and some signature colors (i don't want to make you guys wait for a big update) + optional particles option (may be ugly)
+		- Updated some parts to match the newest official Echoes: beyond update, minus the ones that limit stuff more, should be mostly the same
+		- Better detection for when echoes that should be hidden (such as if you hide explicit echoes, hide read echoes)
+		- Non-saving lazy option to disable water distortion to read echoes under water easier
+		- Couple extra names n'colors for people, again if i missed you feel free to send a message to me with a rgb/hex code!
 	]])
 
 	local close = vgui.Create("DButton", self)
