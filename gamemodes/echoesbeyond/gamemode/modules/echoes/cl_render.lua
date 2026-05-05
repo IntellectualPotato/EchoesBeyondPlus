@@ -1098,12 +1098,10 @@ hook.Add("PreDrawEffects", "echoes_render_PreDrawEffects", function(bDrawingDept
 
 		-- translate badge
 		if (showTransIcon and alpha != 0) then
-			cam.IgnoreZ(true)
 			local transColor = 100 + 155 * active
 			surface.SetDrawColor(loading and Color(transColor, transColor, transColor, alpha) or finalColor)
 			surface.SetMaterial(echoTranslateMat)
 			surface.DrawTexturedRect(16, -80, 64, 64)
-			cam.IgnoreZ(false)
 		end
 
 		-- Alt + e menu, i half have no idea what im doing sue me please LOL
