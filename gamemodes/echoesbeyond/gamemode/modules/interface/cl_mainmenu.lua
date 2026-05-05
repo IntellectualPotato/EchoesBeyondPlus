@@ -210,28 +210,6 @@ function PANEL:Init()
 		end
 	end
 
-	local reportOption = vgui.Create("DButton", self)
-	reportOption:SetSize(48, 48)
-	reportOption:SetPos(self:GetWide() - 48 - 10, 48 + 20)
-	reportOption:SetText("")
-	reportOption.Paint = function(self, width, height)
-		surface.SetDrawColor(self:IsDown() and Color(100, 100, 100) or self:IsHovered() and Color(75, 75, 75) or Color(50, 50, 50))
-		surface.SetMaterial(reportMat)
-		surface.DrawTexturedRect(0, 0, width, height)
-	end
-	reportOption.DoClick = function()
-		EchoSound("button_click")
-
-		if (IsValid(settingsMenu)) then settingsMenu:Close(true) end
-		if (IsValid(creditsMenu)) then creditsMenu:Close(true) end
-
-		if (IsValid(reportMenu)) then
-			reportMenu:Close()
-		else
-			vgui.Create("echoReportMenu")
-		end
-	end
-
 	local creditsOption = vgui.Create("DButton", self)
 	creditsOption:SetSize(48, 48)
 	creditsOption:SetPos(self:GetWide() - 48 - 10, self:GetTall() - 48 - 10)

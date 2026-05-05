@@ -1,6 +1,7 @@
 -- The settings menu
 include("cl_widgets.lua") --moved to a NEW file!!
 local vignette = Material("echoesbeyond/vignette.png", "smooth")
+local settingsMat = Material("echoesbeyond/settings.png", "smooth")
 
 local PANEL = {}
 local lastOpenedTab = 1
@@ -352,6 +353,15 @@ function PANEL:Paint(width, height)
 	surface.SetDrawColor(45, 45, 45)
 	surface.SetMaterial(notif)
 	surface.DrawTexturedRect((width - width * 0.85) / 2, 85, width * 0.85, 40)
+end
+
+function PANEL:PaintOver(width, height)
+	local size = math.min(width / 2, height / 2)
+	local breatheLayer = math.sin(CurTime() * 1.5)
+
+	surface.SetDrawColor(255, 255, 255, 1)
+	surface.SetMaterial(settingsMat)
+	surface.DrawTexturedRectRotated(width / 2, height / 2 + 5 * breatheLayer, size, size, 0)
 end
 
 function PANEL:OnKeyCodePressed(key)

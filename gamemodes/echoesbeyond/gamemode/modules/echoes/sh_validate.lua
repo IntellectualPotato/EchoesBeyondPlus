@@ -152,8 +152,8 @@ else
 		request.received = true
 
 		-- Stop request pump once everything has been received
-		if (numPendingRequests == 0) then
-			hook.Remove("Think", requestHookName, ServiceBatchQueue)
-		end
+		if (numPendingRequests != 0) then return end
+
+		hook.Remove("Think", requestHookName, ServiceBatchQueue)
 	end)
 end

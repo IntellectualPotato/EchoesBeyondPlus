@@ -1,5 +1,6 @@
 
 local vignette = Material("echoesbeyond/vignette.png", "smooth")
+local creditsMat = Material("echoesbeyond/credits.png", "smooth")
 local flatgrassGrey, flatgrassColor, fgWidth, fgHeight = Material("echoesbeyond/flatgrass_greyscale.png", "smooth"), Material("echoesbeyond/flatgrass_color.png", "smooth"), 1000, 373
 
 local y = 80
@@ -207,6 +208,13 @@ function PANEL:Paint(width, height)
 end
 
 function PANEL:PaintOver(width, height)
+	local size = math.min(width / 2, height / 2)
+	local breatheLayer = math.sin(CurTime() * 1.5)
+
+	surface.SetDrawColor(255, 255, 255, 1)
+	surface.SetMaterial(creditsMat)
+	surface.DrawTexturedRectRotated(width / 2, height / 2 + 5 * breatheLayer, size, size, 0)
+
 	surface.SetDrawColor(25, 25, 25)
 	surface.SetMaterial(vignette)
 	surface.DrawTexturedRect(0, 0, width, height)
