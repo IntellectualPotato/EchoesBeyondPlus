@@ -3,15 +3,15 @@ A modification/fork of the echoes beyond garry's mod gamemode, just random chang
 Includes:
 * Skin system that gives a few maps and the first echo on the map a unique skin
 * Funky "draft" system to make up to 3 echoes queued to be created when cooldown expires
-* "Pin" echo system to pin echoes you want to remember, along with a translate feature
+* "Pin" echo system to pin echoes you want to remember, ~~along with a translate feature~~ Translation is now also a part of base mod!
 * A couple extra settings
 * Map list filters (installed, uninstalled, echoed on/not echoed)
 * Map list shows your personal echoes next to the global echoes count
 * Community menu, Listing a wall of people who have contributed to the community
-* More verbose info in the tab menu
+* More verbose info in the tab menu - Some now included in the base mod!
 * "Scary" mode for fun (makes map dark, new 'music'), Requires [Gmod Light / Environment Editor](https://steamcommunity.com/sharedfiles/filedetails/?id=2779451924)
-* Echoes follow the cameras height to help with vents being annoying
-* Couple extra QOL things (will expand)
+* ~~Echoes follow the cameras height to help with vents being annoying~~ Now included in base mod!
+* Couple extra QOL things
 
 i am unsure if i will add too much here, but its here!
 I do not have access to the serverside/backend of EchoesBeyond, This version does not ping the servers any more than the normal mod, for this reason i cannot add things such as timestamps to the echoes
